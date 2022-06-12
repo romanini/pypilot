@@ -316,7 +316,7 @@ class Servo(object):
         self.command_log.write(datetime.now() + ' ' + line)
 
     def send_command(self):
-        self.log_command('send_command called with command: ' + self.command.value + '\n')
+        self.log_command('send_command called with command: ' + str(self.command.value) + '\n')
         t = time.monotonic()
 
         if not self.disengage_on_timeout.value:
@@ -330,20 +330,20 @@ class Servo(object):
             timeout = 10 # position command will expire after 10 seconds
             self.disengaged = False
             if abs(self.position.value - self.command.value) < 1:
-                self.log_command('setting command to 0 because position - command < 1' + '\n')
+                self.log_command('setting command to 0 because position - command < 1\n')
                 self.command.set(0)
             else:
-                self.log_command('send_command calling do_position_command with position_command: ' + self.position_command.value + '\n')
+                self.log_command('send_command calling do_position_command with position_command: ' + str(self.position_command.value) + '\n')
                 self.do_position_command(self.position_command.value)
                 return
         elif self.command.value and not self.fault():
             timeout = 1 # command will expire after 1 second
             if time.monotonic() - self.command.time > timeout:
                 #print('servo command timeout', time.monotonic() - self.command.time)
-                self.log_command('setting command to 0 because command has expired' + '\n')
+                self.log_command('setting command to 0 because command has expired\n')
                 self.command.set(0)
             self.disengaged = False
-        self.log_command('send_command calling do_command with command: ' + self.command.value + '\n')
+        self.log_command('send_command calling do_command with command: ' + str(self.command.value) + '\n')
         self.do_command(self.command.value)
         
     def do_position_command(self, position):
@@ -359,11 +359,11 @@ class Servo(object):
         pid = p + i + d
         #print('pid', pid, p, i, d)
         # map in min_speed to max_speed range
-        self.log_command('do_position_command calling do_command with command: ' + self.command.value + '\n')
+        self.log_command('do_position_command calling do_command with command: ' + str(self.command.value) + '\n')
         self.do_command(pid)
             
     def do_command(self, speed):
-        self.log_command('do_command called with speed: ' + speed + '\n')
+        self.log_command('do_command called with speed: ' + str(speed) + '\n')
         t = time.monotonic()
         dt = t - self.inttime
         if self.force_engaged:  # reset windup when not engaged
@@ -456,7 +456,7 @@ class Servo(object):
         
         # clamp to max speed
         speed = min(max(speed, -max_speed), max_speed)
-        self.log_command('setting speed: ' + speed + '\n')
+        self.log_command('setting speed: ' + str(speed) + '\n')
         self.speed.set(speed)
 
         # estimate position
@@ -481,18 +481,18 @@ class Servo(object):
                 return
 
             command = cal[0] + abs(speed)*cal[1]
-            self.log_command('computing command as ' + cal[0] + ' + abs(' + speed + ') * ' + cal[1] + '\n' )
+            self.log_command('computing command as ' + str(cal[0]) + ' + abs(' + str(speed) + ') * ' + str(cal[1]) + '\n' )
         except:
             print (_('servo calibration invalid'), self.calibration.value)
             self.calibration.set({'port': [.2, .8], 'starboard': [.2, .8]})
-            self.log_command('servo calibration invalid' + self.calibration.value + '\n')
+            self.log_command('servo calibration invalid' + str(self.calibration.value) + '\n')
             return
 
         if speed < 0:
-            self.log_command('speed < 0 so negating command from command: ' + command + ' to ' + -command + '\n')
+            self.log_command('speed < 0 so negating command from command: ' + str(command) + ' to ' + str(-command) + '\n')
             command = -command
-        self.log_command('do_command calling raw_command with command: ' + command + '\n')
-        self.log_command('RAW_COMMAND('+command + ')\n')
+        self.log_command('do_command calling raw_command with command: ' + str(command) + '\n')
+        self.log_command('RAW_COMMAND('+ str(command) + ')\n')
         self.raw_command(command)
 
     def stop(self):
