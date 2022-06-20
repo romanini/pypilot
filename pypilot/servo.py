@@ -222,7 +222,7 @@ class Servo(object):
     command_log_filename = pypilot_dir + 'servocommand.log'
 
     def __init__(self, client, sensors):
-        self.command_log = open(Servo.command_log_filename, 'w')
+        self.command_log = open(Servo.command_log_filename, 'a')
 
         self.client = client
         self.sensors = sensors
@@ -313,7 +313,7 @@ class Servo(object):
         return self.client.register(_type(*(['servo.' + name] + list(args)), **kwargs))
 
     def log_command(self, line):
-        self.command_log.write(datetime.now() + ' ' + line)
+        self.command_log.write(str(datetime.now()) + ' ' + line)
 
     def send_command(self):
         self.log_command('send_command called with command: ' + str(self.command.value) + '\n')
@@ -359,7 +359,7 @@ class Servo(object):
         pid = p + i + d
         #print('pid', pid, p, i, d)
         # map in min_speed to max_speed range
-        self.log_command('do_position_command calling do_command with command: ' + str(self.command.value) + '\n')
+        self.log_command('do_position_command calling do_command with command: ' + str(pid) + '\n')
         self.do_command(pid)
             
     def do_command(self, speed):
@@ -470,10 +470,10 @@ class Servo(object):
         try:
             if speed > 0:
                 cal = self.calibration.value['port']
-                self.log_command('speed > 0 so using port calibration value of: ' + cal + '\n')
+                self.log_command('speed > 0 so using port calibration value\n')
             elif speed < 0:
                 cal = self.calibration.value['starboard']
-                self.log_command('speed < 0 so using starbord calibration value of: ' + cal + '\n')
+                self.log_command('speed > 0 so using starbord calibration value\n')
             else:
                 self.log_command('speed is 0 so calling raw_command(0)\n')
                 self.log_command('RAW_COMMAND(0)\n')
@@ -481,11 +481,11 @@ class Servo(object):
                 return
 
             command = cal[0] + abs(speed)*cal[1]
-            self.log_command('computing command as ' + str(cal[0]) + ' + abs(' + str(speed) + ') * ' + str(cal[1]) + '\n' )
-        except:
+            self.log_command('computing command (' + str(command) + ' as ' + str(cal[0]) + ' + abs(' + str(speed) + ') * ' + str(cal[1]) + '\n' )
+        except Exception as e:
             print (_('servo calibration invalid'), self.calibration.value)
+            self.log_command('servo calibration invalid' + str(self.calibration.value) + ' Exception: ' + str(e) + '\n')
             self.calibration.set({'port': [.2, .8], 'starboard': [.2, .8]})
-            self.log_command('servo calibration invalid' + str(self.calibration.value) + '\n')
             return
 
         if speed < 0:
@@ -504,6 +504,8 @@ class Servo(object):
     def raw_command(self, command):
         # apply command before other calculations
         self.brake_on = self.use_brake.value
+        self.log_command('DOING RAW COMMAND ' + str(command) + '\n\n')
+
         self.do_raw_command(command)
 
         if command <= 0:
