@@ -316,7 +316,7 @@ class Servo(object):
         self.command_log.write(str(datetime.now()) + ' ' + line)
 
     def send_command(self):
-        self.log_command('send_command called with command: ' + str(self.command.value) + '\n')
+        # self.log_command('send_command called with command: ' + str(self.command.value) + '\n')
         t = time.monotonic()
 
         if not self.disengage_on_timeout.value:
@@ -330,20 +330,20 @@ class Servo(object):
             timeout = 10 # position command will expire after 10 seconds
             self.disengaged = False
             if abs(self.position.value - self.command.value) < 1:
-                self.log_command('setting command to 0 because position - command < 1\n')
+                # self.log_command('setting command to 0 because position - command < 1\n')
                 self.command.set(0)
             else:
-                self.log_command('send_command calling do_position_command with position_command: ' + str(self.position_command.value) + '\n')
+                # self.log_command('send_command calling do_position_command with position_command: ' + str(self.position_command.value) + '\n')
                 self.do_position_command(self.position_command.value)
                 return
         elif self.command.value and not self.fault():
             timeout = 1 # command will expire after 1 second
             if time.monotonic() - self.command.time > timeout:
                 #print('servo command timeout', time.monotonic() - self.command.time)
-                self.log_command('setting command to 0 because command has expired\n')
+                # self.log_command('setting command to 0 because command has expired\n')
                 self.command.set(0)
             self.disengaged = False
-        self.log_command('send_command calling do_command with command: ' + str(self.command.value) + '\n')
+        # self.log_command('send_command calling do_command with command: ' + str(self.command.value) + '\n')
         self.do_command(self.command.value)
         
     def do_position_command(self, position):
@@ -359,11 +359,18 @@ class Servo(object):
         pid = p + i + d
         #print('pid', pid, p, i, d)
         # map in min_speed to max_speed range
-        self.log_command('do_position_command calling do_command with command: ' + str(pid) + '\n')
+        # self.log_command('do_position_command calling do_command with command: ' + str(pid) + '\n')
         self.do_command(pid)
-            
-    def do_command(self, speed):
-        self.log_command('do_command called with speed: ' + str(speed) + '\n')
+
+    def do_command(self, command):
+        self.log_command('do_command called with speed: ' + str(command) + '\n')
+        #clamp to between -1 and 1
+        command = min(max(command, -1),1)
+        self.log_command('RAW_COMMAND('+ str(command) + ')\n')
+        self.raw_command(command)
+
+    def do_command_old(self, speed):
+        # self.log_command('do_command called with speed: ' + str(speed) + '\n')
         t = time.monotonic()
         dt = t - self.inttime
         if self.force_engaged:  # reset windup when not engaged
@@ -382,7 +389,7 @@ class Servo(object):
                not self.force_engaged and \
                time.monotonic() - self.command_timeout > self.period.value*3:
                 self.disengaged = True
-            self.log_command('do_command calling raw_command(0) because no speed passed in\n')
+            # self.log_command('do_command calling raw_command(0) because no speed passed in\n')
             self.log_command('RAW_COMMAND(0)\n')
             self.raw_command(0)
             return
@@ -392,7 +399,7 @@ class Servo(object):
         if self.flags.value & (ServoFlags.PORT_OVERCURRENT_FAULT | ServoFlags.MAX_RUDDER_FAULT) and speed > 0 or \
            self.flags.value & (ServoFlags.STARBOARD_OVERCURRENT_FAULT | ServoFlags.MIN_RUDDER_FAULT) and speed < 0:
             self.stop()
-            self.log_command('Aborting so we don''t move the wrong way\n')
+            # self.log_command('Aborting so we don''t move the wrong way\n')
             return # abort
 
         # clear faults from over current if moved sufficiently the other direction
@@ -456,7 +463,7 @@ class Servo(object):
         
         # clamp to max speed
         speed = min(max(speed, -max_speed), max_speed)
-        self.log_command('setting speed: ' + str(speed) + '\n')
+        # self.log_command('setting speed: ' + str(speed) + '\n')
         self.speed.set(speed)
 
         # estimate position
@@ -470,29 +477,29 @@ class Servo(object):
         try:
             if speed > 0:
                 cal = self.calibration.value['port']
-                self.log_command('speed > 0 so using port calibration value\n')
+                # self.log_command('speed > 0 so using port calibration value\n')
             elif speed < 0:
                 cal = self.calibration.value['starboard']
-                self.log_command('speed > 0 so using starbord calibration value\n')
+                # self.log_command('speed > 0 so using starbord calibration value\n')
             else:
-                self.log_command('speed is 0 so calling raw_command(0)\n')
+                # self.log_command('speed is 0 so calling raw_command(0)\n')
                 self.log_command('RAW_COMMAND(0)\n')
                 self.raw_command(0)
                 return
 
             command = cal[0] + abs(speed)*cal[1]
-            self.log_command('computing command (' + str(command) + ' as ' + str(cal[0]) + ' + abs(' + str(speed) + ') * ' + str(cal[1]) + '\n' )
+            # self.log_command('computing command (' + str(command) + ' as ' + str(cal[0]) + ' + abs(' + str(speed) + ') * ' + str(cal[1]) + '\n' )
         except Exception as e:
             print (_('servo calibration invalid'), self.calibration.value)
-            self.log_command('servo calibration invalid' + str(self.calibration.value) + ' Exception: ' + str(e) + '\n')
+            # self.log_command('servo calibration invalid' + str(self.calibration.value) + ' Exception: ' + str(e) + '\n')
             self.calibration.set({'port': [.2, .8], 'starboard': [.2, .8]})
             return
 
         if speed < 0:
-            self.log_command('speed < 0 so negating command from command: ' + str(command) + ' to ' + str(-command) + '\n')
+            # self.log_command('speed < 0 so negating command from command: ' + str(command) + ' to ' + str(-command) + '\n')
             command = -command
-        self.log_command('do_command calling raw_command with command: ' + str(command) + '\n')
-        self.log_command('RAW_COMMAND('+ str(command) + ')\n')
+        # self.log_command('do_command calling raw_command with command: ' + str(command) + '\n')
+        # self.log_command('RAW_COMMAND('+ str(command) + ')\n')
         self.raw_command(command)
 
     def stop(self):
