@@ -329,7 +329,7 @@ void ArduinoServo::params(double _raw_max_current, double _rudder_min, double _r
     params_set = 1;
 }
 
-void ArduinoServo::send_value(uint8_t command, uint16_t value)
+void ArduinoServo::raw_command(uint8_t command, uint16_t value)
 {
     uint8_t code[4] = {command, (uint8_t)(value&0xff), (uint8_t)((value>>8)&0xff), 0};
     code[3] = crc8(code, 3);
