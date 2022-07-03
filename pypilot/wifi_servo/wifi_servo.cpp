@@ -134,53 +134,53 @@ int WifiServo::process_packet(uint8_t *in_buf)
             printf("servo received invalid packet (check serial connection)\n");
         return FLAGS;
         
-    case EEPROM_VALUE_CODE:
-    {
-//        printf("EEPROM VALUE %d %d\n", in_buf[1], in_buf[2]);
-        eeprom_read = 4;
-        uint8_t addr = in_buf[1], val = in_buf[2];
-        static uint8_t lastaddr, lastvalue;
-        if(addr&1) {
-            if(addr == lastaddr+1) {
-                eeprom.value(lastaddr, lastvalue);
-                eeprom.value(addr, val);
-            }
-        } else {
-            lastaddr = addr;
-            lastvalue = val;
-        }
+//     case EEPROM_VALUE_CODE:
+//     {
+// //        printf("EEPROM VALUE %d %d\n", in_buf[1], in_buf[2]);
+//         eeprom_read = 4;
+//         uint8_t addr = in_buf[1], val = in_buf[2];
+//         static uint8_t lastaddr, lastvalue;
+//         if(addr&1) {
+//             if(addr == lastaddr+1) {
+//                 eeprom.value(lastaddr, lastvalue);
+//                 eeprom.value(addr, val);
+//             }
+//         } else {
+//             lastaddr = addr;
+//             lastvalue = val;
+//         }
 
-        // only report eeprom on initial read for all data
-        if(eeprom.initial()) {
-            max_current = eeprom.get_max_current();
-            max_controller_temp = eeprom.get_max_controller_temp();
-            max_motor_temp = eeprom.get_max_motor_temp();
-            rudder_range = eeprom.get_rudder_range();
-            rudder_offset = eeprom.get_rudder_offset();
-            rudder_scale = eeprom.get_rudder_scale();
-            rudder_nonlinearity = eeprom.get_rudder_nonlinearity();
-            max_slew_speed = eeprom.get_max_slew_speed();
-            max_slew_slow = eeprom.get_max_slew_slow();
-            current_factor = eeprom.get_current_factor();
-            current_offset = eeprom.get_current_offset();
-            voltage_factor = eeprom.get_voltage_factor();
-            voltage_offset = eeprom.get_voltage_offset();
-            min_speed = eeprom.get_min_speed();
-            max_speed = eeprom.get_max_speed();
-            gain = eeprom.get_gain();
-            clutch_pwm = eeprom.get_clutch_pwm();
+//         // only report eeprom on initial read for all data
+//         if(eeprom.initial()) {
+//             max_current = eeprom.get_max_current();
+//             max_controller_temp = eeprom.get_max_controller_temp();
+//             max_motor_temp = eeprom.get_max_motor_temp();
+//             rudder_range = eeprom.get_rudder_range();
+//             rudder_offset = eeprom.get_rudder_offset();
+//             rudder_scale = eeprom.get_rudder_scale();
+//             rudder_nonlinearity = eeprom.get_rudder_nonlinearity();
+//             max_slew_speed = eeprom.get_max_slew_speed();
+//             max_slew_slow = eeprom.get_max_slew_slow();
+//             current_factor = eeprom.get_current_factor();
+//             current_offset = eeprom.get_current_offset();
+//             voltage_factor = eeprom.get_voltage_factor();
+//             voltage_offset = eeprom.get_voltage_offset();
+//             min_speed = eeprom.get_min_speed();
+//             max_speed = eeprom.get_max_speed();
+//             gain = eeprom.get_gain();
+//             clutch_pwm = eeprom.get_clutch_pwm();
 
-            // validate ranges
-            params(60, 0, 1, max_current, max_controller_temp, max_motor_temp, rudder_range, rudder_offset, rudder_scale, rudder_nonlinearity, max_slew_speed, max_slew_slow, current_factor, current_offset, voltage_factor, voltage_offset, min_speed, max_speed, gain, clutch_pwm, brake);
-            return EEPROM;
-        } else if(!eeprom.initial_read) {
-            // if we got an eeprom value, but did not get the initial read,
-            // send a lot of disengage commands to speed up communication speed which
-            // will complete reading eeprom faster
-            for(int i=0; i<16; i++)
-                disengage();
-        }
-    }
+//             // validate ranges
+//             params(60, 0, 1, max_current, max_controller_temp, max_motor_temp, rudder_range, rudder_offset, rudder_scale, rudder_nonlinearity, max_slew_speed, max_slew_slow, current_factor, current_offset, voltage_factor, voltage_offset, min_speed, max_speed, gain, clutch_pwm, brake);
+//             return EEPROM;
+//         } else if(!eeprom.initial_read) {
+//             // if we got an eeprom value, but did not get the initial read,
+//             // send a lot of disengage commands to speed up communication speed which
+//             // will complete reading eeprom faster
+//             for(int i=0; i<16; i++)
+//                 disengage();
+//         }
+//     }
     }
     return 0;
 }
@@ -261,72 +261,72 @@ bool WifiServo::fault()
 
 void WifiServo::params(double _raw_max_current, double _rudder_min, double _rudder_max, double _max_current, double _max_controller_temp, double _max_motor_temp, double _rudder_range, double _rudder_offset, double _rudder_scale, double _rudder_nonlinearity, double _max_slew_speed, double _max_slew_slow, double _current_factor, double _current_offset, double _voltage_factor, double _voltage_offset, double _min_speed, double _max_speed, double _gain, double _clutch_pwm, bool _brake)
 {
-    raw_max_current = fmin(60, fmax(0, _raw_max_current));
-    rudder_min = fmin(.5, fmax(-.5, _rudder_min));
-    rudder_max = fmin(.5, fmax(-.5, _rudder_max));
+    // raw_max_current = fmin(60, fmax(0, _raw_max_current));
+    // rudder_min = fmin(.5, fmax(-.5, _rudder_min));
+    // rudder_max = fmin(.5, fmax(-.5, _rudder_max));
 
-    max_current = fmin(60, fmax(0, _max_current));
-    eeprom.set_max_current(max_current);
+    // max_current = fmin(60, fmax(0, _max_current));
+    // // eeprom.set_max_current(max_current);
 
-    max_controller_temp = fmin(100, fmax(30, _max_controller_temp));
-    eeprom.set_max_controller_temp(max_controller_temp);
+    // max_controller_temp = fmin(100, fmax(30, _max_controller_temp));
+    // // eeprom.set_max_controller_temp(max_controller_temp);
 
-    max_motor_temp = fmin(100, fmax(30, _max_motor_temp));
-    eeprom.set_max_motor_temp(max_motor_temp);
+    // max_motor_temp = fmin(100, fmax(30, _max_motor_temp));
+    // // eeprom.set_max_motor_temp(max_motor_temp);
 
-    rudder_range = fmin(120, fmax(0, _rudder_range));
-    eeprom.set_rudder_range(rudder_range);
+    // rudder_range = fmin(120, fmax(0, _rudder_range));
+    // // eeprom.set_rudder_range(rudder_range);
 
-    rudder_offset = fmin(500, fmax(-500, _rudder_offset));
-    eeprom.set_rudder_offset(rudder_offset);
+    // rudder_offset = fmin(500, fmax(-500, _rudder_offset));
+    // // eeprom.set_rudder_offset(rudder_offset);
 
-    rudder_scale = fmin(4000, fmax(-4000, _rudder_scale));
-    eeprom.set_rudder_scale(rudder_scale);
+    // rudder_scale = fmin(4000, fmax(-4000, _rudder_scale));
+    // // eeprom.set_rudder_scale(rudder_scale);
 
-    rudder_nonlinearity = fmin(4000, fmax(-4000, _rudder_nonlinearity));
-    eeprom.set_rudder_nonlinearity(rudder_nonlinearity);
+    // rudder_nonlinearity = fmin(4000, fmax(-4000, _rudder_nonlinearity));
+    // // eeprom.set_rudder_nonlinearity(rudder_nonlinearity);
 
-    max_slew_speed = fmin(100, fmax(0, _max_slew_speed));
-    eeprom.set_max_slew_speed(max_slew_speed);
+    // max_slew_speed = fmin(100, fmax(0, _max_slew_speed));
+    // // eeprom.set_max_slew_speed(max_slew_speed);
 
-    max_slew_slow = fmin(100, fmax(0, _max_slew_slow));
-    eeprom.set_max_slew_slow(max_slew_slow);
+    // max_slew_slow = fmin(100, fmax(0, _max_slew_slow));
+    // // eeprom.set_max_slew_slow(max_slew_slow);
 
-    current_factor = fmin(1.2, fmax(.8, _current_factor));
-    eeprom.set_current_factor(current_factor);
+    // current_factor = fmin(1.2, fmax(.8, _current_factor));
+    // // eeprom.set_current_factor(current_factor);
 
-    current_offset = fmin(1.2, fmax(-1.2, _current_offset));
-    eeprom.set_current_offset(current_offset);
+    // current_offset = fmin(1.2, fmax(-1.2, _current_offset));
+    // // eeprom.set_current_offset(current_offset);
 
-    voltage_factor = fmin(1.2, fmax(.8, _voltage_factor));
-    eeprom.set_voltage_factor(voltage_factor);
+    // voltage_factor = fmin(1.2, fmax(.8, _voltage_factor));
+    // // eeprom.set_voltage_factor(voltage_factor);
 
-    voltage_offset = fmin(1.2, fmax(-1.2, _voltage_offset));
-    eeprom.set_voltage_offset(voltage_offset);
+    // voltage_offset = fmin(1.2, fmax(-1.2, _voltage_offset));
+    // // eeprom.set_voltage_offset(voltage_offset);
 
-    min_speed = fmin(100, fmax(0, _min_speed));
-    eeprom.set_min_speed(min_speed);
+    // min_speed = fmin(100, fmax(0, _min_speed));
+    // // eeprom.set_min_speed(min_speed);
     
-    max_speed = fmin(100, fmax(0, _max_speed));
-    eeprom.set_max_speed(max_speed);
+    // max_speed = fmin(100, fmax(0, _max_speed));
+    // // eeprom.set_max_speed(max_speed);
 
-    gain = fmin(10, fmax(-10, _gain));
-    // disallow gain from -.5 to .5
-    if(gain < 0)
-        gain = fmin(gain, -.5);
-    else
-        gain = fmax(gain, .5);
-    eeprom.set_gain(gain);
+    // gain = fmin(10, fmax(-10, _gain));
+    // // disallow gain from -.5 to .5
+    // if(gain < 0)
+    //     gain = fmin(gain, -.5);
+    // else
+    //     gain = fmax(gain, .5);
+    // // eeprom.set_gain(gain);
 
-    clutch_pwm = fmin(100, fmax(10, _clutch_pwm));
-    eeprom.set_clutch_pwm(clutch_pwm);
+    // clutch_pwm = fmin(100, fmax(10, _clutch_pwm));
+    // // eeprom.set_clutch_pwm(clutch_pwm);
 
-    if(brake != _brake) {
-        brake = _brake;
-        out_sync = 10; // update brake parameter immediately
-    }
+    // if(brake != _brake) {
+    //     brake = _brake;
+    //     out_sync = 10; // update brake parameter immediately
+    // }
 
-    params_set = 1;
+    // params_set = 1;
 }
 
 void WifiServo::send_value(uint8_t command, uint16_t value)
@@ -345,67 +345,67 @@ void WifiServo::send_params()
 {
     // send parameters occasionally, but only after parameters have been
     // initialized by the upper level
-    if (!params_set)
-        return;
+//     if (!params_set)
+//         return;
     
-    switch(out_sync) {
-    case 0: case 8: case 16:
-        send_value(MAX_CURRENT_CODE, eeprom.local.max_current);
-        break;
-    case 4:
-        send_value(MAX_CONTROLLER_TEMP_CODE, eeprom.local.max_controller_temp);
-        break;
-    case 6:
-        send_value(MAX_MOTOR_TEMP_CODE, eeprom.local.max_motor_temp);
-        break;
-    case 10:
-        send_value(CLUTCH_PWM_AND_BRAKE_CODE, eeprom.local.clutch_pwm | (brake ? 256 : 0));
-        break;
-    case 12:
-        send_value(RUDDER_MIN_CODE, (int)round((rudder_min+0.5)*65472));
-        break;
-    case 14:
-        send_value(RUDDER_MAX_CODE, (int)round((rudder_max+0.5)*65472));
-        break;
-    case 18:
-        send_value(MAX_SLEW_CODE,
-                   eeprom.local.max_slew_slow << 8 | eeprom.local.max_slew_speed);
-    break;
-#if 1
-    case 20:
-    {
-        if(eeprom_read == 0) {
-            uint8_t end;
-            int addr = eeprom.need_read(&end);
-            if(addr >= 0 && end > addr) {
-                send_value(EEPROM_READ_CODE, addr | end<<8);
-                //printf("EEPROM_READ %d %d\n", addr, end);
-            }
-        } else
-            eeprom_read--;
-    } break;
-    case 22:
-    {
-        int addr = eeprom.need_write();
-        if(addr >= 0) {
-#if 0
-            printf("\nEEPROM local:\n");
-            for(unsigned int i=0; i< sizeof eeprom.local; i+=2) {
-                printf("%d %x %x\n", i, ((uint8_t*)&eeprom.local)[i], ((uint8_t*)&eeprom.local)[i+1]);
-            }
-#endif
-             //printf("EEPROM_WRITE %d %d %d\n", addr, eeprom.data(addr), eeprom.data(addr+1));
-            // send two packets, always write 16 bits atomically
-            send_value(EEPROM_WRITE_CODE, addr | eeprom.data(addr)<<8);
-            addr++;
-            send_value(EEPROM_WRITE_CODE, addr | eeprom.data(addr)<<8);
-        }
-    } break;
-#endif
-    }
+//     switch(out_sync) {
+//     case 0: case 8: case 16:
+//         send_value(MAX_CURRENT_CODE, eeprom.local.max_current);
+//         break;
+//     case 4:
+//         send_value(MAX_CONTROLLER_TEMP_CODE, eeprom.local.max_controller_temp);
+//         break;
+//     case 6:
+//         send_value(MAX_MOTOR_TEMP_CODE, eeprom.local.max_motor_temp);
+//         break;
+//     case 10:
+//         send_value(CLUTCH_PWM_AND_BRAKE_CODE, eeprom.local.clutch_pwm | (brake ? 256 : 0));
+//         break;
+//     case 12:
+//         send_value(RUDDER_MIN_CODE, (int)round((rudder_min+0.5)*65472));
+//         break;
+//     case 14:
+//         send_value(RUDDER_MAX_CODE, (int)round((rudder_max+0.5)*65472));
+//         break;
+//     case 18:
+//         send_value(MAX_SLEW_CODE,
+//                    eeprom.local.max_slew_slow << 8 | eeprom.local.max_slew_speed);
+//     break;
+// #if 1
+//     case 20:
+//     {
+//         if(eeprom_read == 0) {
+//             uint8_t end;
+//             int addr = eeprom.need_read(&end);
+//             if(addr >= 0 && end > addr) {
+//                 send_value(EEPROM_READ_CODE, addr | end<<8);
+//                 //printf("EEPROM_READ %d %d\n", addr, end);
+//             }
+//         } else
+//             eeprom_read--;
+//     } break;
+//     case 22:
+//     {
+//         int addr = eeprom.need_write();
+//         if(addr >= 0) {
+// #if 0
+//             printf("\nEEPROM local:\n");
+//             for(unsigned int i=0; i< sizeof eeprom.local; i+=2) {
+//                 printf("%d %x %x\n", i, ((uint8_t*)&eeprom.local)[i], ((uint8_t*)&eeprom.local)[i+1]);
+//             }
+// #endif
+//              //printf("EEPROM_WRITE %d %d %d\n", addr, eeprom.data(addr), eeprom.data(addr+1));
+//             // send two packets, always write 16 bits atomically
+//             send_value(EEPROM_WRITE_CODE, addr | eeprom.data(addr)<<8);
+//             addr++;
+//             send_value(EEPROM_WRITE_CODE, addr | eeprom.data(addr)<<8);
+//         }
+//     } break;
+// #endif
+//     }
 
-    if(++out_sync == 23)
-        out_sync = 0;
+//     if(++out_sync == 23)
+//         out_sync = 0;
 }
 
 void WifiServo::raw_command(uint16_t value)
