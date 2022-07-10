@@ -29,6 +29,11 @@ int WifiServo::command(double command)
     return 0;
 }
 
+void WifiServo::disconnect()
+{
+    // disonnect from arduino
+}
+
 bool WifiServo::fault()
 {
     return flags;

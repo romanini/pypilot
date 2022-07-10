@@ -238,7 +238,7 @@ class Servo(object):
         self.controller.update('arduino')
         self.sensors.rudder.update(False)
 
-        # TODO tell diriver to disconnect
+        self.driver.disconnect()
         self.driver = False
 
     def poll(self):
