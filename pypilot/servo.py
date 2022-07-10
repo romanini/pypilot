@@ -15,10 +15,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from values import *
 
-# these are not defined in python module
-TIOCEXCL = 0x540C
-TIOCNXCL = 0x540D
-
 def sign(x):
     if x > 0:
         return 1
@@ -112,10 +108,6 @@ class Servo(object):
         self.rawcommand = self.register(SensorValue, 'raw_command')
 
         self.inttime = 0
-        self.position.amphours = 0
-
-        self.windup = 0
-        self.windup_change = 0
 
         self.disengaged = True
         self.disengage_on_timeout = self.register(BooleanValue, 'disengage_on_timeout', True, persistent=True)
