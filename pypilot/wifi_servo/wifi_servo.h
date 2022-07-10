@@ -12,7 +12,7 @@ class WifiServo
 public:
     WifiServo();
 
-    void command(double command);
+    int command(double command);
     bool fault();
 
     int flags;

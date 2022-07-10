@@ -22,10 +22,11 @@ WifiServo::WifiServo()
     flags = 0;
 }
 
-void WifiServo::command(double command)
+int WifiServo::command(double command)
 {    
     command = fmin(fmax(command, -1), 1);
     // send the command!
+    return 0;
 }
 
 bool WifiServo::fault()

@@ -97,7 +97,7 @@ def find_locales(name, dir = 'locale'):
 
 from pypilot import version
 
-packages = ['pypilot', 'pypilot/pilots', 'pypilot/arduino_servo', 'pypilot/qifi_servo', 'ui', 'hat', 'web', 'pypilot/linebuffer', 'hat/ugfx', 'hat/spireader']
+packages = ['pypilot', 'pypilot/pilots', 'pypilot/arduino_servo', 'pypilot/wifi_servo', 'ui', 'hat', 'web', 'pypilot/linebuffer', 'hat/ugfx', 'hat/spireader']
 try:
     from setuptools import find_packages
     packages = find_packages()

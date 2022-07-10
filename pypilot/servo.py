@@ -7,16 +7,14 @@
 # License as published by the Free Software Foundation; either
 # version 3 of the License, or (at your option) any later version.  
 
-import os, math, sys, time
-import select, serial
+import os
+import sys
 from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from values import *
-import serialprobe
 
-import fcntl
 # these are not defined in python module
 TIOCEXCL = 0x540C
 TIOCNXCL = 0x540D
@@ -36,40 +34,40 @@ def interpolate(x, x0, x1, y0, y1):
 # the pwm0 output from the raspberry pi directly to
 # a servo or motor controller
 # there is no current feedback, instead a fault pin is used
-class RaspberryHWPWMServoDriver(object):
-    def __init__(self):
-        import wiringpi
-        wiringpi.wiringPiSetup()
-        self.engaged = False
-
-    def raw_command(self, command):
-        if command == 0:
-            stop()
-            return
-
-        if not self.engaged:
-            wiringpi.pinMode(1, wiringpi.GPIO.PWM_OUTPUT)
-            wiringpi.pwmSetMode( wiringpi.GPIO.PWM_MODE_MS )
-
-            # fix this to make it higher resolution!!!
-            wiringpi.pwmSetRange( 1000 )
-            wiringpi.pwmSetClock( 400 )
-            self.engaged = True
-            
-        clockcmd = 60 + 30*command
-        clockcmd = int(min(110, max(36, clockcmd)))
-        wiringpi.pwmWrite(1, clockcmd)
-
-    def stop():
-        wiringpi.pinMode(1, wiringpi.GPIO.PWM_INPUT)
-        self.engaged = False
-        
-    def fault(self):
-        return wiringpi.digitalRead(self.fault_pin)
-
-    def errorpin_interrupt(self):
-        if self.fault():
-            self.stop()
+# class RaspberryHWPWMServoDriver(object):
+#     def __init__(self):
+#         import wiringpi
+#         wiringpi.wiringPiSetup()
+#         self.engaged = False
+#
+#     def raw_command(self, command):
+#         if command == 0:
+#             stop()
+#             return
+#
+#         if not self.engaged:
+#             wiringpi.pinMode(1, wiringpi.GPIO.PWM_OUTPUT)
+#             wiringpi.pwmSetMode( wiringpi.GPIO.PWM_MODE_MS )
+#
+#             # fix this to make it higher resolution!!!
+#             wiringpi.pwmSetRange( 1000 )
+#             wiringpi.pwmSetClock( 400 )
+#             self.engaged = True
+#
+#         clockcmd = 60 + 30*command
+#         clockcmd = int(min(110, max(36, clockcmd)))
+#         wiringpi.pwmWrite(1, clockcmd)
+#
+#     def stop():
+#         wiringpi.pinMode(1, wiringpi.GPIO.PWM_INPUT)
+#         self.engaged = False
+#
+#     def fault(self):
+#         return wiringpi.digitalRead(self.fault_pin)
+#
+#     def errorpin_interrupt(self):
+#         if self.fault():
+#             self.stop()
 
 
 # the arduino pypilot servo sketch is used and communication
@@ -202,7 +200,7 @@ class MinRangeSetting(RangeSetting):
 
     def set(self, value):
         if value < self.minvalue.value:
-            value = self.minvalue.value;
+            value = self.minvalue.value
         super(MinRangeSetting, self).set(value)
 
 class MaxRangeSetting(RangeSetting):
@@ -303,7 +301,7 @@ class Servo(object):
 
         self.state = self.register(StringValue, 'state', 'none')
 
-        self.controller = self.register(StringValue, 'controller', 'none')
+        self.controller = self.register(StringValue, 'controller', 'arduino')
         # self.flags = self.register(ServoFlags, 'flags')
 
         self.driver = False
@@ -549,25 +547,25 @@ class Servo(object):
             #     # self.send_driver_params()
             #     # self.driver.disengage()
             # else:
-                #print('servo write', command, time.monotonic())
-                self.driver.command(command)
+            #print('servo write', command, time.monotonic())
+            self.driver.command(command)
 
-                # mul = 1
-                # if self.flags.value & ServoFlags.PORT_OVERCURRENT_FAULT or \
-                #    self.flags.value & ServoFlags.STARBOARD_OVERCURRENT_FAULT: # allow more current to "unstuck" ram
-                #     mul = 2
-                # self.send_driver_params(mul)
+            # mul = 1
+            # if self.flags.value & ServoFlags.PORT_OVERCURRENT_FAULT or \
+            #    self.flags.value & ServoFlags.STARBOARD_OVERCURRENT_FAULT: # allow more current to "unstuck" ram
+            #     mul = 2
+            # self.send_driver_params(mul)
 
-                # detect driver timeout if commanded without measuring current
-                # if self.current.value:
-                #     self.flags.clearbit(ServoFlags.DRIVER_TIMEOUT)
-                #     self.driver_timeout_start = 0
-                # elif command:
-                #     if self.driver_timeout_start:
-                #         if t - self.driver_timeout_start > 1:
-                #             self.flags.setbit(ServoFlags.DRIVER_TIMEOUT)
-                #     else:
-                #         self.driver_timeout_start = t
+            # detect driver timeout if commanded without measuring current
+            # if self.current.value:
+            #     self.flags.clearbit(ServoFlags.DRIVER_TIMEOUT)
+            #     self.driver_timeout_start = 0
+            # elif command:
+            #     if self.driver_timeout_start:
+            #         if t - self.driver_timeout_start > 1:
+            #             self.flags.setbit(ServoFlags.DRIVER_TIMEOUT)
+            #     else:
+            #         self.driver_timeout_start = t
                         
     # def reset(self):
     #     if self.driver:
@@ -575,17 +573,17 @@ class Servo(object):
 
     def close_driver(self):
         #print('servo lost connection')
-        self.controller.update('none')
+        self.controller.update('arduino')
         self.sensors.rudder.update(False)
 
         # for unknown reasons setting timeout to 0 here (already 0)
         # makes device.close() take only .001 seconds instead of .02 seconds
         # but it throws an exception for usb serial ports which we can ignore
-        try:
-            self.device.timeout=0
-        except:
-            pass
-        self.device.close()
+        # try:
+        #     self.device.timeout=0
+        # except:
+        #     pass
+        # self.device.close()
         self.driver = False
 
     # def send_driver_params(self, mul=1):
@@ -636,7 +634,7 @@ class Servo(object):
 
             self.driver = WifiServo()
             # self.send_driver_params()
-            self.device = device
+            # self.device = device
             # self.device.path = device_path[0]
             self.lastpolltime = time.monotonic()
 
@@ -781,39 +779,33 @@ class Servo(object):
         import pyjson
         try:
             filename = Servo.calibration_filename
-            print(_('loading servo calibration'), filename)
+            print('loading servo calibration' + filename)
             file = open(filename)
             self.calibration.set(pyjson.loads(file.readline()))
         except:
-            print(_('WARNING: using default servo calibration!!'))
+            print('WARNING: using default servo calibration!!')
             self.calibration.set(False)
 
     def save_calibration(self):
         file = open(Servo.calibration_filename, 'w')
         file.write(pyjson.dumps(self.calibration))
 
-def test(device_path):
+def test():
     from wifi_servo.wifi_servo import WifiServo
-    print(_('probing') + ' arduino servo')
+    print('probing' + ' arduino servo')
 
-    device.timeout=0 #nonblocking
+    # device.timeout=0 #nonblocking
     driver = WifiServo()
-    t0 = time.monotonic()
-    for x in range(1000):
-        r = driver.poll()
-        if r:
-            print(_('arduino servo detected'))
-            exit(0)
-        time.sleep(.1)
+    r = driver.command(0.5)
+    if r == 0:
+        print('command sent to arduino servo')
+        exit(0)
     exit(1)
         
 def main():
     for i in range(len(sys.argv)):
         if sys.argv[i] == '-t':
-            if len(sys.argv) < i + 2:
-                print(_('device needed for option') + ' -t')
-                exit(1)
-            test(sys.argv[i+1])
+            test()
     
     print('pypilot Servo')
     from server import pypilotServer
