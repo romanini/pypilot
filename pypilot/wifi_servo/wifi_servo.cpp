@@ -11,32 +11,81 @@
 #include <math.h>
 
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include <errno.h>
-
+#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <sys/time.h>
+#include <libexplain/connect.h>
 
 #include "wifi_servo.h"
 
-WifiServo::WifiServo()
+#define PORT 23
+// #define IP "10.10.10.100"
+#define IP "172.16.0.90"
+#define EOL "\n"
+
+WifiServo::WifiServo() 
 {
-    flags = 0;
+    this->flags = 0;
+    this->client = 0;
+
+
+    if ((this->sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+    }
+    this->address.sin_family = AF_INET;
+    this->address.sin_port = htons(PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, IP, &(this->address.sin_addr)) <= 0) {
+        printf("\nInvalid address/ Address not supported \n");
+    }
 }
 
-int WifiServo::command(double command)
-{    
-    command = fmin(fmax(command, -1), 1);
-    // send the command!
-    return 0;
+WifiServo::CommandResult WifiServo::command(char *command) {
+    if (this->connect() > 0) {
+        int sendLen = send(this->sock, command, strlen(command), 0);
+        if (sendLen != strlen(command)) {
+            printf("\nDid not send full command [%s], only sent [%d] bytes", command, sendLen);
+            return COMMAND_NOT_SENT;
+        }
+        // send EOL so teh arduino knows command is finished.
+        char buffer[256] = { 0 };
+        send(this->sock, EOL, strlen(EOL), 0);
+        int valread = read(this->sock, buffer, 256);
+        printf("Got back [%s]",buffer);
+        if (strcmp(buffer, "ok\n")) {
+            return OK;
+        } else {
+            printf("Got unexpected error: [%s]", buffer);
+            return UNKNOWN;
+        }
+    }
+    return NOT_CONNECTED;
 }
 
-void WifiServo::disconnect()
-{
-    // disonnect from arduino
-}
-
-bool WifiServo::fault()
-{
+bool WifiServo::fault() {
     return flags;
+}
+
+void WifiServo::disconnect() {
+    // disonnect from arduino
+    if (this->client != 0) {
+        close(this->client);
+        this->client = 0;
+    }
+}
+
+int WifiServo::connect() {
+    if (this->client == 0) {
+        if ((this->client = ::connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address))) < 0) {
+            printf("\nConnection Failed [%s]\n", ::explain_connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address)) );
+            return -1;
+        }
+    }
+    return this->client;
 }
 
 
