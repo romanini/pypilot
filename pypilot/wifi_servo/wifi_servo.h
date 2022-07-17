@@ -17,7 +17,7 @@ private:
     int client;
     char *lastError;
     struct sockaddr_in address;
-    bool alreadyConnectedm = false;
+    bool alreadyConnected = false;
 
 public:
     enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };
