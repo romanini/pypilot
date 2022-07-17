@@ -30,7 +30,7 @@ WifiServo::WifiServo()
 {
     this->flags = 0;
     this->client = 0;
-
+    this->alreadyConnected = false;
 
     if ((this->sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
@@ -79,11 +79,12 @@ void WifiServo::disconnect() {
 }
 
 int WifiServo::connect() {
-    if (this->client == 0) {
+    if (!this->alreadyConnected) {
         if ((this->client = ::connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address))) < 0) {
             printf("\nConnection Failed [%d]\n", errno );
             return -1;
         }
+        this->alreadyConnected = true;
     }
     return this->client;
 }
