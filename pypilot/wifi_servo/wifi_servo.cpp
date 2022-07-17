@@ -17,7 +17,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <libexplain/connect.h>
+#include <errno.h>
 
 #include "wifi_servo.h"
 
@@ -81,7 +81,7 @@ void WifiServo::disconnect() {
 int WifiServo::connect() {
     if (this->client == 0) {
         if ((this->client = ::connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address))) < 0) {
-            printf("\nConnection Failed [%s]\n", ::explain_connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address)) );
+            printf("\nConnection Failed [%d]\n", errno );
             return -1;
         }
     }
