@@ -9,10 +9,12 @@ class WifiServo
 {
 
 public:
+    enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, ERROR };
     WifiServo();
 
-    int command(double command);
+    CommandResult command(char *command);
     bool fault();
+    void disconnect();
 
     int flags;
 };

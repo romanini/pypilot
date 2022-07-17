@@ -6,16 +6,26 @@
  * version 3 of the License, or (at your option) any later version.
  */
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
 class WifiServo
 {
+private:
+    int connect();
+    int sock;
+    int client;
+    char *lastError;
+    struct sockaddr_in address;
 
 public:
+    enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };
     WifiServo();
 
-    int command(double command);
+    CommandResult command(char *command);
     bool fault();
-
+    void disconnect();
+    
     int flags;
-
 
 };
