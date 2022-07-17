@@ -82,8 +82,14 @@ bool WifiServo::connect() {
         if ((this->client_fd = ::connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address))) < 0) {
             printf("\nConnection Failed [%d]\n", errno );
         } else {
-            this->isConnected = true;
-        }
+            char buffer[256] = { 0 };
+            int valread = read(this->sock, buffer, 256);
+            printf("Connect got back [%s]\n",buffer);
+            if (strcmp(buffer, "connected")) {
+                this->isConnected = true;
+            } else {
+                printf("Didn't get a [connected] confirmation from the server.\n");
+            }
     }
     return this->isConnected;
 }
