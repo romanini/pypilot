@@ -90,6 +90,7 @@ bool WifiServo::connect() {
             } else {
                 printf("Didn't get a [connected] confirmation from the server.\n");
             }
+	}
     }
     return this->isConnected;
 }
