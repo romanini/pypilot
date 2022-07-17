@@ -12,12 +12,12 @@
 class WifiServo
 {
 private:
-    int connect();
+    bool connect();
     int sock;
-    int client;
+    int client_fd;
     char *lastError;
     struct sockaddr_in address;
-    bool alreadyConnected = false;
+    bool isConnected = false;
 
 public:
     enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };

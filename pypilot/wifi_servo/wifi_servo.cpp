@@ -29,8 +29,7 @@
 WifiServo::WifiServo() 
 {
     this->flags = 0;
-    this->client = 0;
-    this->alreadyConnected = false;
+    this->isConnected = false;
 
     if ((this->sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
@@ -45,7 +44,7 @@ WifiServo::WifiServo()
 }
 
 WifiServo::CommandResult WifiServo::command(char *command) {
-    if (this->connect() > 0) {
+    if (this->connect()) {
         int sendLen = send(this->sock, command, strlen(command), 0);
         if (sendLen != strlen(command)) {
             printf("\nDid not send full command [%s], only sent [%d] bytes", command, sendLen);
@@ -72,21 +71,21 @@ bool WifiServo::fault() {
 
 void WifiServo::disconnect() {
     // disonnect from arduino
-    if (this->client != 0) {
-        close(this->client);
-        this->client = 0;
+    if (this->isConnected) {
+        close(this->client_fd);
+        this->isConnected = false;
     }
 }
 
-int WifiServo::connect() {
-    if (!this->alreadyConnected) {
-        if ((this->client = ::connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address))) < 0) {
+bool WifiServo::connect() {
+    if (!this->isConnected) {
+        if ((this->client_fd = ::connect(this->sock, (struct sockaddr*)&(this->address), sizeof(this->address))) < 0) {
             printf("\nConnection Failed [%d]\n", errno );
-            return -1;
+        } else {
+            this->isConnected = true;
         }
-        this->alreadyConnected = true;
     }
-    return this->client;
+    return this->isConnected;
 }
 
 
