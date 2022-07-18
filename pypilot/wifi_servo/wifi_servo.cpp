@@ -43,7 +43,13 @@ WifiServo::WifiServo()
     }
 }
 
-WifiServo::CommandResult WifiServo::command(char *command) {
+WifiServo::CommandResult WifiServo::timeCommand(double relativeTime) {
+    char command[100];
+    snprintf(command, "t%d",relativeTime);
+    return WifiServo::sendCommand(command);
+}
+
+WifiServo::CommandResult WifiServo::sendCommand(char *command) {
     if (this->connect()) {
         int sendLen = send(this->sock, command, strlen(command), 0);
         if (sendLen != strlen(command)) {

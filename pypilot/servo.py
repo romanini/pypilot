@@ -120,7 +120,9 @@ class Servo(object):
 
         self.controller = self.register(StringValue, 'controller', 'arduino')
 
-        self.driver = False
+        from pypilot.wifi_servo.wifi_servo import WifiServo
+        self.driver = WifiServo()
+
         self.raw_command(0)
 
     def register(self, _type, name, *args, **kwargs):
@@ -222,28 +224,12 @@ class Servo(object):
         else:
             self.command_timeout = t
 
-        if self.driver:
-            self.driver.command(command)
-
-    def close_driver(self):
-        #print('servo lost connection')
-        self.controller.update('arduino')
-        self.sensors.rudder.update(False)
-
-        self.driver.disconnect()
-        self.driver = False
+        self.driver.command(command)
 
     def poll(self):
-        if not self.driver:
-            from pypilot.wifi_servo.wifi_servo import WifiServo
-            self.driver = WifiServo()
-        if not self.driver:
-            return
         self.send_command()
 
     def fault(self):
-        if not self.driver:
-            return False
         return self.driver.fault()
 
     def load_calibration(self):
@@ -261,23 +247,14 @@ class Servo(object):
         file = open(Servo.calibration_filename, 'w')
         file.write(pyjson.dumps(self.calibration))
 
-def test():
-    from wifi_servo.wifi_servo import WifiServo
-    print('probing' + ' arduino servo')
-
-    # device.timeout=0 #nonblocking
-    driver = WifiServo()
-    r = driver.command(0.5)
+def test(servo):
+    r = servo.do_command(0.5)
     if r == 0:
-        print('command sent to arduino servo')
+        print('command sent to arduino servo successfully')
         exit(0)
     exit(1)
         
 def main():
-    for i in range(len(sys.argv)):
-        if sys.argv[i] == '-t':
-            test()
-    
     print('pypilot Servo')
     from server import pypilotServer
     server = pypilotServer()
@@ -288,6 +265,10 @@ def main():
     from sensors import Sensors # for rudder feedback
     sensors = Sensors(client, False)
     servo = Servo(client, sensors)
+
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '-t':
+            test(servo)
 
     period = .1
     lastt = time.monotonic()

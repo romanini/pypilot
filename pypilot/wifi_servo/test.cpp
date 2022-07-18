@@ -14,10 +14,10 @@ int main(void)
 {
     printf("starting...");
     WifiServo servo;
-    char cmd1[] = "t0.5";
-    WifiServo::CommandResult ret = servo.command(cmd1);
-    printf("Sent [%s] and got back [%d]", cmd1, ret);
-    char cmd2[] = "t0.6";
-    ret = servo.command(cmd2);
-    printf("Sent [%s] and got back [%d]", cmd2, ret);
+    double rt1 = 0.5;
+    WifiServo::CommandResult ret = servo.timeCommand(rt1);
+    printf("Sent [%d] and got back [%d]", rt1, ret);
+    double rt2 = 0.6;
+    ret = servo.timeCommand(rt2);
+    printf("Sent [%d] and got back [%d]", rt2, ret);
 }

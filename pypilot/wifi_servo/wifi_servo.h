@@ -12,7 +12,9 @@
 class WifiServo
 {
 private:
+    CommandResult sendCommand(char *command);
     bool connect();
+    void disconnect();
     int sock;
     int client_fd;
     char *lastError;
@@ -23,9 +25,8 @@ public:
     enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };
     WifiServo();
 
-    CommandResult command(char *command);
+    CommandResult TimeCommand(double relativeTime);
     bool fault();
-    void disconnect();
     
     int flags;
 

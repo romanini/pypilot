@@ -14,7 +14,6 @@ public:
 
     CommandResult command(char *command);
     bool fault();
-    void disconnect();
 
     int flags;
 };
