@@ -12,7 +12,7 @@ public:
     enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, ERROR };
     WifiServo();
 
-    CommandResult command(char *command);
+    CommandResult timeCommand(double relativeTime);
     bool fault();
 
     int flags;
