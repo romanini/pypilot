@@ -11,16 +11,6 @@
 
 class WifiServo
 {
-private:
-    WifiServo::CommandResult sendCommand(char *command);
-    bool connect();
-    void disconnect();
-    int sock;
-    int client_fd;
-    char *lastError;
-    struct sockaddr_in address;
-    bool isConnected = false;
-
 public:
     enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };
     WifiServo();
@@ -30,4 +20,13 @@ public:
     
     int flags;
 
+private:
+    WifiServo::CommandResult sendCommand(char *command);
+    bool connect();
+    void disconnect();
+    int sock;
+    int client_fd;
+    char *lastError;
+    struct sockaddr_in address;
+    bool isConnected;
 };

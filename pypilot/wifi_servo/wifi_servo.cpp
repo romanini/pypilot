@@ -45,7 +45,7 @@ WifiServo::WifiServo()
 
 WifiServo::CommandResult WifiServo::timeCommand(double relativeTime) {
     char command[100];
-    sprintf(command, "t%d",relativeTime);
+    sprintf(command, "t%f",relativeTime);
     return this->sendCommand(command);
 }
 

@@ -16,8 +16,8 @@ int main(void)
     WifiServo servo;
     double rt1 = 0.5;
     WifiServo::CommandResult ret = servo.timeCommand(rt1);
-    printf("Sent [%d] and got back [%d]", rt1, ret);
+    printf("Sent [%f] and got back [%d]", rt1, ret);
     double rt2 = 0.6;
     ret = servo.timeCommand(rt2);
-    printf("Sent [%d] and got back [%d]", rt2, ret);
+    printf("Sent [%f] and got back [%d]", rt2, ret);
 }
