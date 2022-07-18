@@ -224,7 +224,7 @@ class Servo(object):
         else:
             self.command_timeout = t
 
-        self.driver.command(command)
+        self.driver.timeCommand(command)
 
     def poll(self):
         self.send_command()
