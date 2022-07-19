@@ -251,9 +251,11 @@ def test(servo):
     r = servo.do_command(0.5)
     if r == 0:
         print('command sent to arduino servo successfully')
-        exit(0)
-    exit(1)
-        
+
+    else:
+        print('command sent to arduino servo failed: ' + str(r))
+    return -r
+
 def main():
     print('pypilot Servo')
     from server import pypilotServer
@@ -268,7 +270,8 @@ def main():
 
     for i in range(len(sys.argv)):
         if sys.argv[i] == '-t':
-            test(servo)
+            r = test(servo)
+            exit(r)
 
     period = .1
     lastt = time.monotonic()
