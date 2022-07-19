@@ -183,7 +183,7 @@ class Servo(object):
         #clamp to between -1 and 1
         command = min(max(command, -1),1)
         self.log_command('RAW_COMMAND('+ str(command) + ')\n')
-        self.raw_command(command)
+        return self.raw_command(command)
 
     def stop(self):
         self.brake_on = False
@@ -196,7 +196,7 @@ class Servo(object):
         # self.brake_on = self.use_brake.value
         self.log_command('DOING RAW COMMAND ' + str(command) + '\n\n')
 
-        self.do_raw_command(command)
+        result = self.do_raw_command(command)
 
         if command <= 0:
             if command < 0:
@@ -211,7 +211,8 @@ class Servo(object):
         else:
             self.state.update('forward')
             self.lastdir = 1
-        
+        return result
+
     def do_raw_command(self, command):
         self.rawcommand.set(command)
 
@@ -224,7 +225,7 @@ class Servo(object):
         else:
             self.command_timeout = t
 
-        self.driver.timeCommand(command)
+        return self.driver.timeCommand(command)
 
     def poll(self):
         self.send_command()
