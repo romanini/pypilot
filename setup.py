@@ -48,6 +48,12 @@ arduino_servo_module = Extension('pypilot/arduino_servo/_arduino_servo',
                         swig_opts=['-c++']
 )
 
+wifi_servo_module = Extension('pypilot/wifi_servo/_wifi_servo',
+                        sources=['pypilot/wifi_servo/wifi_servo.cpp', 'pypilot/wifi_servo/wifi_servo.i'],
+                        extra_compile_args=['-Wno-unused-result'],
+                        swig_opts=['-c++']
+)
+
 ugfx_defs = ['-DWIRINGPI']
 try:
     import RPi.GPIO
@@ -91,7 +97,7 @@ def find_locales(name, dir = 'locale'):
 
 from pypilot import version
 
-packages = ['pypilot', 'pypilot/pilots', 'pypilot/arduino_servo', 'ui', 'hat', 'web', 'pypilot/linebuffer', 'hat/ugfx', 'hat/spireader']
+packages = ['pypilot', 'pypilot/pilots', 'pypilot/arduino_servo', 'pypilot/wifi_servo', 'ui', 'hat', 'web', 'pypilot/linebuffer', 'hat/ugfx', 'hat/spireader']
 try:
     from setuptools import find_packages
     packages = find_packages()
@@ -113,7 +119,7 @@ package_data = {'pypilot': find_locales('pypilot'),
                 'pypilot.web': ['static/*', 'templates/*'] + ['pypilot_web.pot'] + find_locales('web', 'translations')}
         
 
-ext_modules = [arduino_servo_module, linebuffer_module, ugfx_module]
+ext_modules = [arduino_servo_module, wifi_servo_module, linebuffer_module, ugfx_module]
 if spireader_module:
     ext_modules.append(spireader_module)    
 

@@ -168,7 +168,7 @@ def ServoCalibrationThread(calibration):
             sys.stdout.write('%d ' % t)
             sys.stdout.flush()
             self.average_power(1) # wait to reset and cool
-        servo.max_current.set(10)
+        # servo.max_current.set(10)
 
         #console('calibration raw command:', raw_cmd)
         t0 = False
