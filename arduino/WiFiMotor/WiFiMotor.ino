@@ -37,9 +37,13 @@ WiFiClient client;
 
 #define BUF_SIZE 100
 #define MAX_MOTOR_PLUS 255
-#define MAX_MOTOR_MINUS 255
-#define motor_plus 2
-#define motor_neg 3
+#define MAX_MOTOR_NEG 255
+#define MOTOR_PLUS_PIN 2
+#define MOTOR_NEG_PIN 3
+// TODO Make sure these are correct directions once on the boat.
+#define DIRECTION_POSITIVE 'Port'
+#define DIRECTION_NEGATIVE 'Starbord'
+
 char command_buffer[BUF_SIZE];
 int cmd_count = BUF_SIZE;
 
@@ -49,10 +53,10 @@ boolean alreadyConnected = false; // whether or not the client was connected pre
 
 void setup() {
 
-  pinMode(motor_plus,OUTPUT);
-  pinMode(motor_neg,OUTPUT);
-  analogWrite(motor_plus,0);
-  analogWrite(motor_neg,0);
+  pinMode(MOTOR_PLUS_PIN,OUTPUT);
+  pinMode(MOTOR_NEG_PIN,OUTPUT);
+  analogWrite(MOTOR_PLUS_PIN,0);
+  analogWrite(MOTOR_NEG_PIN,0);
   //Initialize serial and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
@@ -91,28 +95,29 @@ void setup() {
 
 }
 
-int process_cmd(char buffer[])
-{
-  if(buffer[0]=='t')
-  {
+int process_cmd(char buffer[]) {
+  if (buffer[0] == 't') {
     float value = atof(&buffer[1]);
     int run_mills = value * 1000;
-    analogWrite(motor_plus,0);
-    analogWrite(motor_neg,0);
-    Serial.println(run_mills);
-    if(run_mills>0) analogWrite(motor_plus,MAX_MOTOR_PLUS);
-    else if(run_mills<0) {
-      analogWrite(motor_neg,MAX_MOTOR_MINUS);
-      value*=-1;
-      
+    analogWrite(MOTOR_PLUS_PIN,0);
+    analogWrite(MOTOR_NEG_PIN,0);
+    Serial.print("Turning wheel to ");
+    if (run_mills > 0) {
+      analogWrite(MOTOR_PLUS_PIN,MAX_MOTOR_PLUS);
+      Serial.print(DIRECTION_POSITIVE);
+    } else if (run_mills < 0) {
+      analogWrite(MOTOR_NEG_PIN,MAX_MOTOR_NEG);
+      Serial.print(DIRECTION_NEGATIVE);
+      run_mills*=-1;
     }
+    Serial.print(" for ");
+    Serial.print(run_mills);
+    Serial.println(" ms");
     unsigned int cur_mills = millis();
     time_mot = cur_mills + run_mills;
     client.println("ok");
     return 0;
-  }
-  else
-  {
+  } else {
     client.println("-1 Command not understood");
     return -1;
   }
@@ -124,12 +129,11 @@ void loop() {
   client = server.available();
 
   unsigned int cur_mills = millis();
-  if(time_mot < cur_mills && time_mot)
-  {
+  if(time_mot < cur_mills && time_mot) {
     time_mot = 0;
     Serial.println("Stopping motor");
-    analogWrite(motor_plus,0);
-    analogWrite(motor_neg,0);
+    analogWrite(MOTOR_PLUS_PIN,0);
+    analogWrite(MOTOR_NEG_PIN,0);
   }
   // when the client sends the first byte, say hello:
   if (client) {
@@ -143,28 +147,16 @@ void loop() {
     if (client.available() > 0) {
       // read the bytes incoming from the client:
       char thisChar = client.read();
-      if(thisChar=='\n')
-      {
-        Serial.print("End char found :");
-        Serial.println(cmd_count);
+      if (thisChar == '\n') {
         command_buffer[BUF_SIZE-cmd_count]=0;
         process_cmd(command_buffer);
-        Serial.println(command_buffer);
         cmd_count = BUF_SIZE;
-      }
-      else
-      {
-        Serial.write(thisChar);
-        if(cmd_count > 0)
-        {
+      } else {
+        if (cmd_count > 0) {
           command_buffer[BUF_SIZE-cmd_count]=thisChar;
           cmd_count--;
         }
       }
-      // echo the bytes back to the client:
-      //server.write(thisChar);
-      // echo the bytes to the server as well:
-      //Serial.write(thisChar);
     }
   }
 }
