@@ -51,7 +51,7 @@ WifiServo::CommandResult WifiServo::timeCommand(double relativeTime) {
 
 WifiServo::CommandResult WifiServo::sendCommand(char *command) {
     if (this->connect()) {
-        int sendLen = send(this->sock, command, strlen(command), 0);
+        size_t sendLen = send(this->sock, command, strlen(command), 0);
         if (sendLen != strlen(command)) {
             printf("\nDid not send full command [%s], only sent [%d] bytes", command, sendLen);
             return COMMAND_NOT_SENT;
@@ -59,8 +59,7 @@ WifiServo::CommandResult WifiServo::sendCommand(char *command) {
         // send EOL so teh arduino knows command is finished.
         char buffer[256] = { 0 };
         send(this->sock, EOL, strlen(EOL), 0);
-        int valread = read(this->sock, buffer, 256);
-        // printf("Got back [%s]",buffer);
+        read(this->sock, buffer, 256);
         if (strcmp(buffer, "ok\n")) {
             return OK;
         } else {
