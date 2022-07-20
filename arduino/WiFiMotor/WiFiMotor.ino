@@ -41,8 +41,8 @@ WiFiClient client;
 #define MOTOR_PLUS_PIN 2
 #define MOTOR_NEG_PIN 3
 // TODO Make sure these are correct directions once on the boat.
-#define DIRECTION_POSITIVE 'Port'
-#define DIRECTION_NEGATIVE 'Starbord'
+#define DIRECTION_POSITIVE "port"
+#define DIRECTION_NEGATIVE "starbord"
 
 char command_buffer[BUF_SIZE];
 int cmd_count = BUF_SIZE;
