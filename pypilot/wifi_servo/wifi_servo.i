@@ -9,7 +9,7 @@ class WifiServo
 {
 
 public:
-    enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, ERROR };
+    enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };
     WifiServo();
 
     WifiServo::CommandResult timeCommand(double relativeTime);
