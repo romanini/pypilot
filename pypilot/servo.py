@@ -120,6 +120,17 @@ class Servo(object):
 
         self.controller = self.register(StringValue, 'controller', 'arduino')
 
+        self.watch_values = {}
+        self.watch_values['ap.enabled'] = False
+        self.watch_values['ap.heading'] = 0
+        self.watch_values['ap.heading_command'] = 0
+        self.watch_values['ap.mode'] = ''
+
+        self.watch_list = ['ap.enabled', 'ap.heading_command', 'ap.mode']
+
+        for name in self.watch_list:
+            self.client.watch(name)
+
         from pypilot.wifi_servo.wifi_servo import WifiServo
         self.driver = WifiServo()
 
@@ -180,8 +191,8 @@ class Servo(object):
 
     def do_command(self, command):
         self.log_command('do_command called with speed: ' + str(command) + '\n')
-        #clamp to between -1 and 1
-        command = min(max(command, -1),1)
+        #clamp to between -1 and 1 and round it to 2 decimal places to reduce noise.
+        command = round(min(max(command, -1),1),2)
         self.log_command('RAW_COMMAND('+ str(command) + ')\n')
         return self.raw_command(command)
 
@@ -225,10 +236,25 @@ class Servo(object):
         else:
             self.command_timeout = t
 
-        return self.driver.timeCommand(command)
+        return self.driver.wheel(command)
+
+    def send_info(self):
+        self.driver.heading(self.watch_values['ap.heading'])
+        self.driver.track(self.watch_values['ap.heading_command'])
+        self.driver.mode(self.watch_values['ap.mode'])
+        self.driver.endabled(1 if self.watch_values['ap.enabled'] else 0)
 
     def poll(self):
         self.send_command()
+
+        self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
+        self.client.watch('ap.heading_command', 1)
+
+        msgs = self.client.receive()
+        for name, value in msgs.items():
+            self.watch_values[name] = value
+
+        self.send_info()
 
     def fault(self):
         return self.driver.fault()
@@ -282,9 +308,9 @@ def main():
             # print('voltage:', servo.voltage.value, 'current', servo.current.value, 'ctrl temp', servo.controller_temp.value, 'motor temp', servo.motor_temp.value, 'rudder pos', sensors.rudder.angle.value, 'flags', servo.flags.get_str())
             pass
 
+        client.poll()
         servo.poll()
         sensors.poll()
-        client.poll()
         server.poll()
 
         dt = period - time.monotonic() + lastt
