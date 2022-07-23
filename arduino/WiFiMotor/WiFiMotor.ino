@@ -48,6 +48,11 @@ char command_buffer[BUF_SIZE];
 int cmd_count = BUF_SIZE;
 
 int time_mot=0;
+float heading = 0;
+float track = 0;
+char mode[BUF_SIZE] = "";
+int enabled = 0;
+
 int dir;
 boolean alreadyConnected = false; // whether or not the client was connected previously
 
@@ -95,33 +100,87 @@ void setup() {
 
 }
 
-int process_cmd(char buffer[]) {
-  if (buffer[0] == 't') {
-    float value = atof(&buffer[1]);
-    int run_mills = value * 1000;
-    analogWrite(MOTOR_PLUS_PIN,0);
-    analogWrite(MOTOR_NEG_PIN,0);
-    Serial.print("Turning wheel to ");
-    if (run_mills > 0) {
-      analogWrite(MOTOR_PLUS_PIN,MAX_MOTOR_PLUS);
-      Serial.print(DIRECTION_POSITIVE);
-    } else if (run_mills < 0) {
-      analogWrite(MOTOR_NEG_PIN,MAX_MOTOR_NEG);
-      Serial.print(DIRECTION_NEGATIVE);
-      run_mills*=-1;
-    }
-    Serial.print(" for ");
-    Serial.print(run_mills);
-    Serial.println(" ms");
-    unsigned int cur_mills = millis();
-    time_mot = cur_mills + run_mills;
-    client.println("ok");
-    return 0;
-  } else {
-    client.println("-1 Command not understood");
-    return -1;
+int process_wheel(char buffer[]) {
+  float value = atof(&buffer[1]);
+  int run_mills = value * 1000;
+  analogWrite(MOTOR_PLUS_PIN,0);
+  analogWrite(MOTOR_NEG_PIN,0);
+  Serial.print("Turning wheel to ");
+  if (run_mills > 0) {
+    analogWrite(MOTOR_PLUS_PIN,MAX_MOTOR_PLUS);
+    Serial.print(DIRECTION_POSITIVE);
+  } else if (run_mills < 0) {
+    analogWrite(MOTOR_NEG_PIN,MAX_MOTOR_NEG);
+    Serial.print(DIRECTION_NEGATIVE);
+    run_mills*=-1;
   }
-	
+  Serial.print(" for ");
+  Serial.print(run_mills);
+  Serial.println(" ms");
+  unsigned int cur_mills = millis();
+  time_mot = cur_mills + run_mills;
+  client.println("ok");
+  return 0;
+}
+
+int process_heading(char buffer[]) {
+  heading = atof(&buffer[1]);
+  Serial.print("Heading is ");
+  Serial.println(heading);
+  client.println("ok");
+  return 0;
+}
+
+int process_track(char buffer[]) {
+  track = atof(&buffer[1]);
+  Serial.print("Track is ");
+  Serial.println(track);
+  client.println("ok");
+  return 0;
+}
+
+int process_mode(char buffer[]) {
+  strcpy(mode,&buffer[1]);
+  Serial.print("Mode is ");
+  Serial.println(mode);
+  client.println("ok");
+  return 0;
+}
+
+int process_enabled(char buffer[]) {
+  enabled = atoi(&buffer[1]);
+  Serial.print("Enabled is ");
+  Serial.println(enabled);
+  client.println("ok");
+  return 0;
+}
+
+int process_cmd(char buffer[]) {
+  char command = buffer[0];
+  int result = 0;
+  switch (command) {
+    case 'w':
+      result = process_wheel(buffer);
+      break;
+    case 'h':
+      result = process_heading(buffer);
+      break;
+    case 't':
+      result = process_track(buffer);
+      break;
+    case 'm':
+      result = process_mode(buffer);
+      break;
+    case 'e':
+      result = process_enabled(buffer);
+      break;
+    default:
+      client.println("-1 Command not understood");
+      result -1;
+      break;
+
+  }
+	return result;
 }
 
 void loop() {
