@@ -303,14 +303,9 @@ def main():
     period = .1
     lastt = time.monotonic()
     while True:
-
-        if servo.controller.value != 'none':
-            # print('voltage:', servo.voltage.value, 'current', servo.current.value, 'ctrl temp', servo.controller_temp.value, 'motor temp', servo.motor_temp.value, 'rudder pos', sensors.rudder.angle.value, 'flags', servo.flags.get_str())
-            pass
-
-        client.poll()
         servo.poll()
         sensors.poll()
+        client.poll()
         server.poll()
 
         dt = period - time.monotonic() + lastt
