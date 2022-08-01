@@ -49,27 +49,27 @@ WifiServo::CommandResult WifiServo::wheel(double relativeTime) {
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult heading(double heading) {
+WifiServo::CommandResult WifiServo::heading(double heading) {
     char command[100];
     sprintf(command, "h%f",heading);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult track(double track) {
+WifiServo::CommandResult WifiServo::track(double track) {
     char command[100];
     sprintf(command, "t%f",track);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult mode(char *mode) {
+WifiServo::CommandResult WifiServo::mode(char *mode) {
     char command[100];
     sprintf(command, "m%s",mode);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult endabled(int endabled) {
+WifiServo::CommandResult WifiServo::enabled(int enabled) {
     char command[100];
-    sprintf(command, "e%d",endabled);
+    sprintf(command, "e%d",enabled);
     return this->sendCommand(command);
 
 }

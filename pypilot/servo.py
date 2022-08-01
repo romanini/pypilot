@@ -126,10 +126,10 @@ class Servo(object):
         self.watch_values['ap.heading_command'] = 0
         self.watch_values['ap.mode'] = ''
 
-        self.watch_list = ['ap.enabled', 'ap.heading_command', 'ap.mode']
-
-        for name in self.watch_list:
-            self.client.watch(name)
+        # self.watch_list = ['ap.enabled', 'ap.heading', 'ap.heading_command', 'ap.mode']
+        #
+        # for name in self.watch_list:
+        #     self.client.watch(name)
 
         from pypilot.wifi_servo.wifi_servo import WifiServo
         self.driver = WifiServo()
@@ -242,19 +242,19 @@ class Servo(object):
         self.driver.heading(self.watch_values['ap.heading'])
         self.driver.track(self.watch_values['ap.heading_command'])
         self.driver.mode(self.watch_values['ap.mode'])
-        self.driver.endabled(1 if self.watch_values['ap.enabled'] else 0)
+        self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)
 
     def poll(self):
         self.send_command()
 
-        self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
-        self.client.watch('ap.heading_command', 1)
+        # self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
+        # self.client.watch('ap.heading_command', 1)
 
-        msgs = self.client.receive()
-        for name, value in msgs.items():
-            self.watch_values[name] = value
+        # msgs = self.client.receive()
+        # for name, value in msgs.items():
+        #     self.watch_values[name] = value
 
-        self.send_info()
+        # self.send_info()
 
     def fault(self):
         return self.driver.fault()
@@ -276,11 +276,12 @@ class Servo(object):
 
 def test(servo):
     r = servo.do_command(0.5)
-    if r == 0:
-        print('command sent to arduino servo successfully')
-
-    else:
+    if r != 0:
         print('command sent to arduino servo failed: ' + str(r))
+
+    print('command sent to arduino servo successfully')
+    servo.poll()
+
     return -r
 
 def main():

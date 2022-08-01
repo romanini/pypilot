@@ -19,7 +19,7 @@ public:
     WifiServo::CommandResult heading(double heading);
     WifiServo::CommandResult track(double track);
     WifiServo::CommandResult mode(char *mode);
-    WifiServo::CommandResult endabled(int enabled);
+    WifiServo::CommandResult enabled(int enabled);
     bool fault();
     
     int flags;
