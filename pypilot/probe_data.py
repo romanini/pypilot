@@ -16,11 +16,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from values import *
 
 class ProbeData(object):
-    pypilot_dir = os.getenv('HOME') + '/.pypilot/'
-    calibration_filename = pypilot_dir + 'servocalibration'
-
-    command_log_filename = pypilot_dir + 'servocommand.log'
-
     def __init__(self, client):
         self.client = client
 
@@ -36,10 +31,11 @@ class ProbeData(object):
             self.client.watch(name)
 
     def send_info(self):
-        self.driver.heading(self.watch_values['ap.heading'])
-        self.driver.track(self.watch_values['ap.heading_command'])
-        self.driver.mode(self.watch_values['ap.mode'])
-        self.driver.endabled(1 if self.watch_values['ap.enabled'] else 0)
+        print(f'Watch Values: {self.watch_values}')
+        print(f"ap.heading: {self.watch_values['ap.heading']}")
+        print(f"ap.heading_command: {self.watch_values['ap.heading_command']}")
+        print(f"ap.mode: {self.watch_values['ap.mode']}")
+        print(f"ap.enabled: {self.watch_values['ap.enabled']}")
 
     def poll(self):
         self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
