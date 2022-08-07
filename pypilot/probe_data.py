@@ -19,50 +19,61 @@ class ProbeData(object):
     def __init__(self, client):
         self.client = client
 
+        self.poll_count = 0
+
         self.watch_values = {}
         self.watch_values['ap.enabled'] = False
         self.watch_values['ap.heading'] = 0
         self.watch_values['ap.heading_command'] = 0
         self.watch_values['ap.mode'] = ''
 
-        self.watch_list = ['ap.enabled', 'ap.heading_command', 'ap.mode']
+        self.watch_list = ['ap.enabled', 'ap.heading', 'ap.heading_command', 'ap.mode']
 
         for name in self.watch_list:
             self.client.watch(name)
 
     def send_info(self):
         print(f'Watch Values: {self.watch_values}')
-        print(f"ap.heading: {self.watch_values['ap.heading']}")
-        print(f"ap.heading_command: {self.watch_values['ap.heading_command']}")
-        print(f"ap.mode: {self.watch_values['ap.mode']}")
-        print(f"ap.enabled: {self.watch_values['ap.enabled']}")
 
     def poll(self):
-        self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
-        self.client.watch('ap.heading_command', 1)
+        # self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
+        # self.client.watch('ap.heading_command', 1)
 
         msgs = self.client.receive()
+        print(f'Got client message: {msgs}')
         for name, value in msgs.items():
             self.watch_values[name] = value
 
         self.send_info()
+        (quotient, remainder) = divmod(self.poll_count, 10)
+        if (remainder == 0 and quotient > 0 ):
+            self.client.set('ap.heading_command',self.watch_values['ap.heading_command'] + 2)
+            print("adding 2 to heading command\n")
+
+        (q, r) = divmod(quotient, 5)
+        if (remainder == 0 and r == 0 and q >  0) :
+            self.client.set('ap.enabled', not self.watch_values['ap.enabled'])
+            print("set enabled to {not self.watch_values['ap.enabled']}")
+        self.poll_count += 1
+
 
 def main():
     print('Probing Data')
-    from server import pypilotServer
-    server = pypilotServer()
+    # from server import pypilotServer
+    # server = pypilotServer()
 
     from client import pypilotClient
-    client = pypilotClient(server)
+    client = pypilotClient("localhost")
+    # client = pypilotClient(server)
 
     probe = ProbeData(client)
 
-    period = .1
+    period = 1
     lastt = time.monotonic()
     while True:
         probe.poll()
         client.poll()
-        server.poll()
+        # server.poll()
 
         dt = period - time.monotonic() + lastt
         if dt > 0 and dt < period:

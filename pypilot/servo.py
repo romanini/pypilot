@@ -120,16 +120,21 @@ class Servo(object):
 
         self.controller = self.register(StringValue, 'controller', 'arduino')
 
+        self.poll_count = 0
+
+        from client import pypilotClient
+
+        self.local_client = pypilotClient("localhost")
         self.watch_values = {}
         self.watch_values['ap.enabled'] = False
         self.watch_values['ap.heading'] = 0
         self.watch_values['ap.heading_command'] = 0
         self.watch_values['ap.mode'] = ''
 
-        # self.watch_list = ['ap.enabled', 'ap.heading', 'ap.heading_command', 'ap.mode']
-        #
-        # for name in self.watch_list:
-        #     self.client.watch(name)
+        self.watch_list = ['ap.enabled', 'ap.heading', 'ap.heading_command', 'ap.mode']
+
+        for name in self.watch_list:
+            self.local_client.watch(name)
 
         from pypilot.wifi_servo.wifi_servo import WifiServo
         self.driver = WifiServo()
@@ -190,10 +195,10 @@ class Servo(object):
         self.do_command(pid)
 
     def do_command(self, command):
-        self.log_command('do_command called with speed: ' + str(command) + '\n')
+        # self.log_command('do_command called with speed: ' + str(command) + '\n')
         #clamp to between -1 and 1 and round it to 2 decimal places to reduce noise.
         command = round(min(max(command, -1),1),2)
-        self.log_command('RAW_COMMAND('+ str(command) + ')\n')
+        # self.log_command('RAW_COMMAND('+ str(command) + ')\n')
         return self.raw_command(command)
 
     def stop(self):
@@ -205,7 +210,7 @@ class Servo(object):
     def raw_command(self, command):
         # apply command before other calculations
         # self.brake_on = self.use_brake.value
-        self.log_command('DOING RAW COMMAND ' + str(command) + '\n\n')
+        # self.log_command('DOING RAW COMMAND ' + str(command) + '\n\n')
 
         result = self.do_raw_command(command)
 
@@ -244,9 +249,35 @@ class Servo(object):
         self.driver.mode(self.watch_values['ap.mode'])
         self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)
 
+    def poll_command(self):
+        # self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
+        # self.client.watch('ap.heading_command', 1)
+
+        msgs = self.local_client.receive()
+        self.log_command(f'Got client message: {msgs}\n')
+        for name, value in msgs.items():
+            self.watch_values[name] = value
+
+        self.send_info()
+        self.log_command(f'Watch Values: {self.watch_values}\n')
+        (quotient, remainder) = divmod(self.poll_count, 100)
+        if (remainder == 0 and quotient > 0 ):
+            self.local_client.set('ap.heading_command',self.watch_values['ap.heading_command'] + 2)
+            self.log_command("adding 2 to heading command\n")
+
+        (q, r) = divmod(quotient, 5)
+        if (remainder == 0 and r == 0 and q >  0) :
+            self.local_client.set('ap.enabled', not self.watch_values['ap.enabled'])
+            self.log_command("set enabled to {not self.watch_values['ap.enabled']}\n")
+
     def poll(self):
         self.send_command()
 
+        (quotient, remainder) = divmod(self.poll_count, 10)
+        if (remainder == 0 and quotient > 0 ):
+            self.poll_command()
+
+        self.poll_count += 1
         # self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
         # self.client.watch('ap.heading_command', 1)
 
