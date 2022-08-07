@@ -243,22 +243,45 @@ class Servo(object):
 
         return self.driver.wheel(command)
 
-    def send_info(self):
-        self.driver.heading(self.watch_values['ap.heading'])
-        self.driver.track(self.watch_values['ap.heading_command'])
-        self.driver.mode(self.watch_values['ap.mode'])
-        self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)
+    def send_heading(self):
+        result = self.driver.heading(self.watch_values['ap.heading'])
+        if result != 'ok':
+            print(f'Error setting heading: {result}')
+
+    def send_track(self):
+        result = self.driver.track(self.watch_values['ap.heading_command'])
+        if result != 'ok':
+            if result[0] == 't':
+                track_adjust = float(result[1:len(result)])
+                # If we want to alter where we are going track no matter means
+                # anything to us.  We need to change mode to compass and point to
+                # where we are pointing.
+                # Note: I'm adjusting based on heading and not track is that accurate?
+                self.local_client.set('ap.mode', 'compass')
+                self.local_client.set('ap.heading_command', self.watch_values['ap.heading'] + track_adjust)
+            else:
+                print(f'Error setting track: {result}')
+
+    def send_mode(self):
+        result = self.driver.mode(self.watch_values['ap.mode'])
+        if result != 'ok':
+            if result[0] == 'm':
+                mode_adjust = result[1:len(result)]
+                if mode_adjust == "compass" or mode_adjust == "gps":
+                    self.local_client.set('ap.mode', mode_adjust)
+            else:
+                print(f'Error setting mode: {result}')
+
+    def send_enabled(self):
+        result = self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)
+        if result != 'ok':
+            if result[0] == 'e':
+                enabled_adjust = int(result[1:len(result)])
+                self.local_client.set('ap.enabled', enabled_adjust)
+            else:
+                print(f'Error setting enabled: {result}')
 
     def poll_command(self):
-        # self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
-        # self.client.watch('ap.heading_command', 1)
-
-        msgs = self.local_client.receive()
-        self.log_command(f'Got client message: {msgs}\n')
-        for name, value in msgs.items():
-            self.watch_values[name] = value
-
-        self.send_info()
         self.log_command(f'Watch Values: {self.watch_values}\n')
         (quotient, remainder) = divmod(self.poll_count, 100)
         if (remainder == 0 and quotient > 0 ):
@@ -278,14 +301,16 @@ class Servo(object):
             self.poll_command()
 
         self.poll_count += 1
-        # self.client.watch('ap.heading', False if self.watch_values['ap.enabled'] else 1)
-        # self.client.watch('ap.heading_command', 1)
 
-        # msgs = self.client.receive()
-        # for name, value in msgs.items():
-        #     self.watch_values[name] = value
+        msgs = self.local_client.receive()
+        self.log_command(f'Got client message: {msgs}\n')
+        for name, value in msgs.items():
+            self.watch_values[name] = value
 
-        # self.send_info()
+        self.send_heading()
+        self.send_track()
+        self.send_mode()
+        self.send_enabled()
 
     def fault(self):
         return self.driver.fault()
@@ -306,9 +331,11 @@ class Servo(object):
         file.write(pyjson.dumps(self.calibration))
 
 def test(servo):
-    r = servo.do_command(0.5)
-    if r != 0:
-        print('command sent to arduino servo failed: ' + str(r))
+    result = servo.do_command(0.5)
+    r = 0
+    if result != 'ok':
+        print('command sent to arduino servo failed: ' + result)
+        r = 1
 
     print('command sent to arduino servo successfully')
     servo.poll()

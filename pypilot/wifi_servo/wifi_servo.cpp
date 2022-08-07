@@ -43,56 +43,51 @@ WifiServo::WifiServo()
     }
 }
 
-WifiServo::CommandResult WifiServo::wheel(double relativeTime) {
+const char *WifiServo::wheel(double relativeTime) {
     char command[100];
     sprintf(command, "w%f",relativeTime);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult WifiServo::heading(double heading) {
+const char *WifiServo::heading(double heading) {
     char command[100];
     sprintf(command, "h%f",heading);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult WifiServo::track(double track) {
+const char *WifiServo::track(double track) {
     char command[100];
     sprintf(command, "t%f",track);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult WifiServo::mode(char *mode) {
+const char *WifiServo::mode(char *mode) {
     char command[100];
     sprintf(command, "m%s",mode);
     return this->sendCommand(command);
 }
 
-WifiServo::CommandResult WifiServo::enabled(int enabled) {
+const char *WifiServo::enabled(int enabled) {
     char command[100];
     sprintf(command, "e%d",enabled);
     return this->sendCommand(command);
 
 }
 
-WifiServo::CommandResult WifiServo::sendCommand(char *command) {
+const char *WifiServo::sendCommand(char *command) {
     if (this->connect()) {
         size_t sendLen = send(this->sock, command, strlen(command), 0);
         if (sendLen != strlen(command)) {
             printf("\nDid not send full command [%s], only sent [%d] bytes", command, sendLen);
-            return COMMAND_NOT_SENT;
+            return "ERROR: Command Not Sent";
         }
         // send EOL so teh arduino knows command is finished.
-        char buffer[256] = { 0 };
+        this->buffer = { 0 };
         send(this->sock, EOL, strlen(EOL), 0);
-        read(this->sock, buffer, 256);
-        if (strcmp(buffer, "ok\n")) {
-            return OK;
-        } else {
-            printf("Got unexpected error: [%s]", buffer);
-            return UNKNOWN;
-        }
+        read(this->sock, this->buffer, 256);
+        return this->buffer;
     }
-    return NOT_CONNECTED;
+    return "ERROR: Not Connected";
 }
 
 bool WifiServo::fault() {

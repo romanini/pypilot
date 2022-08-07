@@ -15,11 +15,11 @@ public:
     enum CommandResult {OK, COMMAND_NOT_SENT, NOT_CONNECTED, UNKNOWN };
     WifiServo();
 
-    WifiServo::CommandResult wheel(double relativeTime);
-    WifiServo::CommandResult heading(double heading);
-    WifiServo::CommandResult track(double track);
-    WifiServo::CommandResult mode(char *mode);
-    WifiServo::CommandResult enabled(int enabled);
+    const char *wheel(double relativeTime);
+    const char *heading(double heading);
+    const char *track(double track);
+    const char *mode(char *mode);
+    const char *enabled(int enabled);
     bool fault();
     
     int flags;
@@ -31,6 +31,7 @@ private:
     int sock;
     int client_fd;
     char *lastError;
+    char buffer[256];
     struct sockaddr_in address;
     bool isConnected;
 };
