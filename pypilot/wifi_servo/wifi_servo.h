@@ -26,6 +26,7 @@ public:
 
 private:
     const char *sendCommand(char *command);
+    int readline(int fd, char ** out);
     bool connect();
     void disconnect();
     int sock;

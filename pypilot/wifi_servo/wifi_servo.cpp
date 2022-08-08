@@ -85,32 +85,77 @@ const char *WifiServo::sendCommand(char *command) {
         }
         // send EOL so teh arduino knows command is finished.
         send(this->sock, EOL, strlen(EOL), 0);
-
-        char *buffer = (char *) PyMem_Malloc(256);
-        memset(buffer, 0, sizeof(buffer));
-
-        int n = 0;
-        char data[256] = { 0 };
-        int buffer_offset = 0;
-        while ((n = read(this->sock, data, 256)) > 0) {
-	    if (n == -1) {
-		printf("read error [%d]", errno);
-		} else if (n == 0) {
-		printf("read zero bytes");
-		}
-            int i = 0;
-            while (i < n) {
-                if (data[i] == '\n') {
-		    printf("returning [%s]\n",buffer);
-                    return buffer;
-                }
-                buffer[buffer_offset + i] = data[i];
-            }
-	    printf("buffer is [%s]\n", buffer);
-            buffer_offset += n;
-        }
+        char *result;         
+        int ret;
+        ret = readline(this->sock, &result);
+        return result;
+        
     }
     return "ERROR: Not Connected";
+}
+
+int WifiServo::readline(int fd, char **out) {
+    int buf_size = 0; 
+    int in_buf = 0; 
+    int ret;
+    char ch; 
+    char *buffer = NULL; 
+    char *new_buffer;
+
+    do {
+        // read a single byte
+        ret = read(fd, &ch, 1);
+        if (ret < 1) {
+            // error or disconnect
+            PyMem_Free(buffer);
+            return -1;
+        }
+
+        // has end of line been reached?
+        if (ch == '\n') 
+            break; // yes
+
+        // is more memory needed?
+        if ((buf_size == 0) || (in_buf == buf_size)) {
+            buf_size += 128; 
+            new_buffer = PyMem_Realloc(buffer, buf_size); 
+
+            if (!new_buffer) {
+                PyMem_Free(buffer);
+                return -1;
+            } 
+
+            buffer = new_buffer; 
+        } 
+
+        buffer[in_buf] = ch; 
+        ++in_buf; 
+    } while (true);
+
+    // if the line was terminated by "\r\n", ignore the
+    // "\r". the "\n" is not in the buffer
+    if ((in_buf > 0) && (buffer[in_buf-1] == '\r'))
+        --in_buf;
+
+    // is more memory needed?
+    if ((buf_size == 0) || (in_buf == buf_size)) {
+        ++buf_size; 
+        new_buffer = PyMem_Realloc(buffer, buf_size); 
+
+        if (!new_buffer) {
+            PyMem_Free(buffer);
+            return -1;
+        } 
+
+        buffer = new_buffer; 
+    } 
+
+    // add a null terminator
+    buffer[in_buf] = '\0';
+
+    *out = buffer; // complete line
+
+    return in_buf; // number of chars in the line, not counting the line break and null terminator
 }
 
 bool WifiServo::fault() {
