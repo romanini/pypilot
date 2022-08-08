@@ -83,11 +83,23 @@ const char *WifiServo::sendCommand(char *command) {
             return "ERROR: Command Not Sent";
         }
         // send EOL so teh arduino knows command is finished.
+        send(this->sock, EOL, strlen(EOL), 0);
+
         char *buffer = (char *) PyMem_Malloc(256);
         memset(buffer, 0, sizeof(buffer));
-        send(this->sock, EOL, strlen(EOL), 0);
-        read(this->sock, buffer, 256);
-        return buffer;
+        int n = 0;
+        char data[256] = { 0 };
+        int buffer_offset = 0;
+        while ((n = read(this->sock, data, 256)) > 0) {
+            int i = 0;
+            while (i < n) {
+                if (data[i] == '\n') {
+                    return buffer;
+                }
+                buffer[buffer_offset + i] = data[i];
+            }
+            buffer_offset += n;
+        }
     }
     return "ERROR: Not Connected";
 }
