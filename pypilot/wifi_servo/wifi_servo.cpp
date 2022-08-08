@@ -118,7 +118,7 @@ int WifiServo::readline(int fd, char **out) {
         // is more memory needed?
         if ((buf_size == 0) || (in_buf == buf_size)) {
             buf_size += 128; 
-            new_buffer = PyMem_Realloc(buffer, buf_size); 
+            new_buffer = (char *) PyMem_Realloc(buffer, buf_size); 
 
             if (!new_buffer) {
                 PyMem_Free(buffer);
@@ -140,7 +140,7 @@ int WifiServo::readline(int fd, char **out) {
     // is more memory needed?
     if ((buf_size == 0) || (in_buf == buf_size)) {
         ++buf_size; 
-        new_buffer = PyMem_Realloc(buffer, buf_size); 
+        new_buffer = (char *) PyMem_Realloc(buffer, buf_size); 
 
         if (!new_buffer) {
             PyMem_Free(buffer);
