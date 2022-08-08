@@ -25,7 +25,7 @@ public:
     int flags;
 
 private:
-    WifiServo::CommandResult sendCommand(char *command);
+    const char *sendCommand(char *command);
     bool connect();
     void disconnect();
     int sock;

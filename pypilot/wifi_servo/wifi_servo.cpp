@@ -82,7 +82,7 @@ const char *WifiServo::sendCommand(char *command) {
             return "ERROR: Command Not Sent";
         }
         // send EOL so teh arduino knows command is finished.
-        this->buffer = { 0 };
+        memset(this->buffer, 0, sizeof(this->buffer));
         send(this->sock, EOL, strlen(EOL), 0);
         read(this->sock, this->buffer, 256);
         return this->buffer;
