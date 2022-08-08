@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include "Python.h"
+#include "pymem.h"
 
 #include "wifi_servo.h"
 
@@ -87,17 +88,25 @@ const char *WifiServo::sendCommand(char *command) {
 
         char *buffer = (char *) PyMem_Malloc(256);
         memset(buffer, 0, sizeof(buffer));
+
         int n = 0;
         char data[256] = { 0 };
         int buffer_offset = 0;
         while ((n = read(this->sock, data, 256)) > 0) {
+	    if (n == -1) {
+		printf("read error [%d]", errno);
+		} else if (n == 0) {
+		printf("read zero bytes");
+		}
             int i = 0;
             while (i < n) {
                 if (data[i] == '\n') {
+		    printf("returning [%s]\n",buffer);
                     return buffer;
                 }
                 buffer[buffer_offset + i] = data[i];
             }
+	    printf("buffer is [%s]\n", buffer);
             buffer_offset += n;
         }
     }
