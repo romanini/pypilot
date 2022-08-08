@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <errno.h>
+#include "Python.h"
 
 #include "wifi_servo.h"
 
@@ -82,10 +83,11 @@ const char *WifiServo::sendCommand(char *command) {
             return "ERROR: Command Not Sent";
         }
         // send EOL so teh arduino knows command is finished.
-        memset(this->buffer, 0, sizeof(this->buffer));
+        char *buffer = (char *) PyMem_Malloc(256);
+        memset(buffer, 0, sizeof(buffer));
         send(this->sock, EOL, strlen(EOL), 0);
-        read(this->sock, this->buffer, 256);
-        return this->buffer;
+        read(this->sock, buffer, 256);
+        return buffer;
     }
     return "ERROR: Not Connected";
 }

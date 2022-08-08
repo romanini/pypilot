@@ -31,7 +31,6 @@ private:
     int sock;
     int client_fd;
     char *lastError;
-    char buffer[256];
     struct sockaddr_in address;
     bool isConnected;
 };
