@@ -175,6 +175,9 @@ void process_enabled(char buffer[]) {
 void process_cmd(char buffer[]) {
   char command = buffer[0];
   switch (command) {
+    case 'a':
+      process_adjust_cmd(buffer);
+      break;
     case 'w':
       process_wheel(buffer);
       break;
@@ -192,6 +195,24 @@ void process_cmd(char buffer[]) {
       break;
     default:
       client.println("-1 Command not understood");
+      break;
+  }
+}
+
+void process_adjust_cmd(char buffer[]) {
+  char command = buffer[1];
+  switch (command) {
+    case 't':
+      process_adjust_track(buffer);
+      break;
+    case 'm':
+      process_adjust_mode(buffer);
+      break;
+    case 'e':
+      process_adjust_enabled(buffer);
+      break;
+    default:
+      Serial.println("-1 Command not understood");
       break;
   }
 }
@@ -224,56 +245,24 @@ void read_network_command() {
 }
 
 void process_adjust_track(char buffer[]) {
-  track_adjust = atof(&buffer[1]);
+  track_adjust += atof(&buffer[2]);
   Serial.print("Track adjust is ");
   Serial.println(track_adjust);
+  client.println("ok");
 }
 
 void process_adjust_mode(char buffer[]) {
-  strcpy(mode_adjust,&buffer[1]);
+  strcpy(mode_adjust,&buffer[2]);
   Serial.print("Mode adjust is ");
   Serial.println(mode_adjust);
+  client.println("ok");
 }
 
 void process_adjust_enabled(char buffer[]) {
-  enabled_adjust = atoi(&buffer[1]);
+  enabled_adjust = atoi(&buffer[2]);
   Serial.print("Enabled adjust is ");
   Serial.println(enabled_adjust);
-}
-
-void process_serial_cmd(char buffer[]) {
-  char command = buffer[0];
-  switch (command) {
-    case 't':
-      process_adjust_track(buffer);
-      break;
-    case 'm':
-      process_adjust_mode(buffer);
-      break;
-    case 'e':
-      process_adjust_enabled(buffer);
-      break;
-    default:
-      Serial.println("-1 Command not understood");
-      break;
-  }
-}
-
-void read_serial_command() {
-  // see if there is any serial input.  If there is, read it.
-  while (Serial.available() > 0) {
-    char thisChar = Serial.read();
-    if (thisChar == '\n') {
-        serial_command_buffer[BUF_SIZE - serial_command_count]=0;
-        process_serial_cmd(serial_command_buffer);
-        serial_command_count = BUF_SIZE;
-      } else {
-        if (serial_command_count > 0) {
-          serial_command_buffer[BUF_SIZE - serial_command_count]=thisChar;
-          serial_command_count--;
-        }
-      }
-  }
+  client.println("ok");
 }
 
 void loop() {
@@ -288,7 +277,6 @@ void loop() {
     analogWrite(MOTOR_NEG_PIN,0);
   }
   
-  read_serial_command();
   read_network_command();
 }
 

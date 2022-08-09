@@ -281,25 +281,8 @@ class Servo(object):
             else:
                 print(f'Error setting enabled: {result}')
 
-    def poll_command(self):
-        self.log_command(f'Watch Values: {self.watch_values}\n')
-        (quotient, remainder) = divmod(self.poll_count, 100)
-        if (remainder == 0 and quotient > 0 ):
-            self.local_client.set('ap.heading_command',self.watch_values['ap.heading_command'] + 2)
-            self.log_command("adding 2 to heading command\n")
-
-        (q, r) = divmod(quotient, 5)
-        if (remainder == 0 and r == 0 and q >  0) :
-            self.local_client.set('ap.enabled', not self.watch_values['ap.enabled'])
-            self.log_command("set enabled to {not self.watch_values['ap.enabled']}\n")
-
     def poll(self):
         self.send_command()
-
-        (quotient, remainder) = divmod(self.poll_count, 10)
-        if (remainder == 0 and quotient > 0 ):
-            self.poll_command()
-
         self.poll_count += 1
 
         msgs = self.local_client.receive()
