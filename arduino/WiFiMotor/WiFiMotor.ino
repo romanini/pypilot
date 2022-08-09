@@ -28,8 +28,6 @@ char ssid[] = SECRET_SSID;        // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
 IPAddress ip(10, 10, 10, 100);
 
-int keyIndex = 0;            // your network key index number (needed only for WEP)
-
 int status = WL_IDLE_STATUS;
 
 WiFiServer server(23);
@@ -45,13 +43,19 @@ WiFiClient client;
 #define DIRECTION_NEGATIVE "starbord"
 
 char command_buffer[BUF_SIZE];
-int cmd_count = BUF_SIZE;
+int command_count = BUF_SIZE;
+char serial_command_buffer[BUF_SIZE];
+int serial_command_count = BUF_SIZE;
 
 int time_mot=0;
 float heading = 0;
 float track = 0;
 char mode[BUF_SIZE] = "";
 int enabled = 0;
+
+int track_adjust = 0;
+char mode_adjust[BUF_SIZE] = "";
+int enabled_adjust = -1;
 
 int dir;
 boolean alreadyConnected = false; // whether or not the client was connected previously
@@ -100,7 +104,7 @@ void setup() {
 
 }
 
-int process_wheel(char buffer[]) {
+void process_wheel(char buffer[]) {
   float value = atof(&buffer[1]);
   int run_mills = value * 1000;
   analogWrite(MOTOR_PLUS_PIN,0);
@@ -120,80 +124,79 @@ int process_wheel(char buffer[]) {
   unsigned int cur_mills = millis();
   time_mot = cur_mills + run_mills;
   client.println("ok");
-  return 0;
 }
 
-int process_heading(char buffer[]) {
+void process_heading(char buffer[]) {
   heading = atof(&buffer[1]);
   Serial.print("Heading is ");
   Serial.println(heading);
   client.println("ok");
-  return 0;
 }
 
-int process_track(char buffer[]) {
+void process_track(char buffer[]) {
   track = atof(&buffer[1]);
   Serial.print("Track is ");
   Serial.println(track);
-  client.println("ok");
-  return 0;
+  if (track_adjust == 0) {
+    client.println("ok");
+  } else {
+    client.print("t");
+    client.println(track_adjust);
+    track_adjust = 0;
+  }
 }
 
-int process_mode(char buffer[]) {
+void process_mode(char buffer[]) {
   strcpy(mode,&buffer[1]);
   Serial.print("Mode is ");
   Serial.println(mode);
-  client.println("ok");
-  return 0;
+  if (mode_adjust == "") {
+    client.println("ok");
+  } else {
+    client.print("m");
+    client.println(mode_adjust);
+    strcpy(mode_adjust, "");    
+  }
 }
 
-int process_enabled(char buffer[]) {
+void process_enabled(char buffer[]) {
   enabled = atoi(&buffer[1]);
   Serial.print("Enabled is ");
   Serial.println(enabled);
-  client.println("ok");
-  return 0;
+  if (enabled_adjust == -1) {
+    client.println("ok");
+  } else {
+    client.print("e");
+    client.println(enabled_adjust);
+    enabled_adjust = -1;
+  }
 }
 
-int process_cmd(char buffer[]) {
+void process_cmd(char buffer[]) {
   char command = buffer[0];
-  int result = 0;
   switch (command) {
     case 'w':
-      result = process_wheel(buffer);
+      process_wheel(buffer);
       break;
     case 'h':
-      result = process_heading(buffer);
+      process_heading(buffer);
       break;
     case 't':
-      result = process_track(buffer);
+      process_track(buffer);
       break;
     case 'm':
-      result = process_mode(buffer);
+      process_mode(buffer);
       break;
     case 'e':
-      result = process_enabled(buffer);
+      process_enabled(buffer);
       break;
     default:
       client.println("-1 Command not understood");
-      result -1;
       break;
-
   }
-	return result;
 }
 
-void loop() {
-  // wait for a new client:
-  client = server.available();
-
-  unsigned int cur_mills = millis();
-  if(time_mot < cur_mills && time_mot) {
-    time_mot = 0;
-    Serial.println("Stopping motor");
-    analogWrite(MOTOR_PLUS_PIN,0);
-    analogWrite(MOTOR_NEG_PIN,0);
-  }
+void read_network_command() {
   // when the client sends the first byte, say hello:
   if (client) {
     if (!alreadyConnected) {
@@ -207,19 +210,87 @@ void loop() {
       // read the bytes incoming from the client:
       char thisChar = client.read();
       if (thisChar == '\n') {
-        command_buffer[BUF_SIZE-cmd_count]=0;
+        command_buffer[BUF_SIZE-command_count]=0;
         process_cmd(command_buffer);
-        cmd_count = BUF_SIZE;
+        command_count = BUF_SIZE;
       } else {
-        if (cmd_count > 0) {
-          command_buffer[BUF_SIZE-cmd_count]=thisChar;
-          cmd_count--;
+        if (command_count > 0) {
+          command_buffer[BUF_SIZE-command_count]=thisChar;
+          command_count--;
         }
       }
     }
   }
 }
 
+void process_adjust_track(char buffer[]) {
+  track_adjust = atof(&buffer[1]);
+  Serial.print("Track adjust is ");
+  Serial.println(track_adjust);
+}
+
+void process_adjust_mode(char buffer[]) {
+  strcpy(mode_adjust,&buffer[1]);
+  Serial.print("Mode adjust is ");
+  Serial.println(mode_adjust);
+}
+
+void process_adjust_enabled(char buffer[]) {
+  enabled_adjust = atoi(&buffer[1]);
+  Serial.print("Enabled adjust is ");
+  Serial.println(enabled_adjust);
+}
+
+void process_serial_cmd(char buffer[]) {
+  char command = buffer[0];
+  switch (command) {
+    case 't':
+      process_adjust_track(buffer);
+      break;
+    case 'm':
+      process_adjust_mode(buffer);
+      break;
+    case 'e':
+      process_adjust_enabled(buffer);
+      break;
+    default:
+      Serial.println("-1 Command not understood");
+      break;
+  }
+}
+
+void read_serial_command() {
+  // see if there is any serial input.  If there is, read it.
+  while (Serial.available() > 0) {
+    char thisChar = Serial.read();
+    if (thisChar == '\n') {
+        serial_command_buffer[BUF_SIZE - serial_command_count]=0;
+        process_serial_cmd(serial_command_buffer);
+        serial_command_count = BUF_SIZE;
+      } else {
+        if (serial_command_count > 0) {
+          serial_command_buffer[BUF_SIZE - serial_command_count]=thisChar;
+          serial_command_count--;
+        }
+      }
+  }
+}
+
+void loop() {
+  // wait for a new client:
+  client = server.available();
+
+  unsigned int cur_mills = millis();
+  if(time_mot < cur_mills && time_mot) {
+    time_mot = 0;
+    Serial.println("Stopping motor");
+    analogWrite(MOTOR_PLUS_PIN,0);
+    analogWrite(MOTOR_NEG_PIN,0);
+  }
+  
+  read_serial_command();
+  read_network_command();
+}
 
 void printWifiStatus() {
   // print the SSID of the network you're attached to:
