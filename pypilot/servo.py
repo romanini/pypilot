@@ -145,7 +145,8 @@ class Servo(object):
         return self.client.register(_type(*(['servo.' + name] + list(args)), **kwargs))
 
     def log_command(self, line):
-        self.command_log.write(str(datetime.now()) + ' ' + line)
+        # self.command_log.write(str(datetime.now()) + ' ' + line)
+        pass
 
     def send_command(self):
         # self.log_command('send_command called with command: ' + str(self.command.value) + '\n')
@@ -250,6 +251,7 @@ class Servo(object):
 
     def send_track(self):
         result = self.driver.track(self.watch_values['ap.heading_command'])
+        self.log_command(f'Sent Track got response [{result}]\n')
         if result != 'ok':
             if result[0] == 't':
                 track_adjust = float(result[1:len(result)])
@@ -257,27 +259,34 @@ class Servo(object):
                 # anything to us.  We need to change mode to compass and point to
                 # where we are pointing.
                 # Note: I'm adjusting based on heading and not track is that accurate?
+                new_track = self.watch_values['ap.heading'] + track_adjust
                 self.local_client.set('ap.mode', 'compass')
-                self.local_client.set('ap.heading_command', self.watch_values['ap.heading'] + track_adjust)
+                self.local_client.set('ap.heading_command', new_track)
+                self.log_command(f'Set mode to compass and track to [{new_track}]\n')
             else:
                 print(f'Error setting track: {result}')
 
     def send_mode(self):
         result = self.driver.mode(self.watch_values['ap.mode'])
+        self.log_command(f'Sent Mode got response [{result}]\n')
         if result != 'ok':
             if result[0] == 'm':
-                mode_adjust = result[1:len(result)]
+                # skip the leading m and the other for the trailing CR/LF
+                mode_adjust = result[1:-2]
                 if mode_adjust == "compass" or mode_adjust == "gps":
                     self.local_client.set('ap.mode', mode_adjust)
+                    self.log_command(f'Set mode to [{mode_adjust}]\n')
             else:
                 print(f'Error setting mode: {result}')
 
     def send_enabled(self):
         result = self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)
+        self.log_command(f'Sent Enabled got response [{result}]\n')
         if result != 'ok':
             if result[0] == 'e':
                 enabled_adjust = int(result[1:len(result)])
-                self.local_client.set('ap.enabled', enabled_adjust)
+                self.local_client.set('ap.enabled', True if enabled_adjust == 1 else False)
+                self.log_command(f'Set enabled to [{enabled_adjust}]\n')
             else:
                 print(f'Error setting enabled: {result}')
 
@@ -286,9 +295,9 @@ class Servo(object):
         self.poll_count += 1
 
         msgs = self.local_client.receive()
-        self.log_command(f'Got client message: {msgs}\n')
         for name, value in msgs.items():
             self.watch_values[name] = value
+        self.log_command(f'Watch Values: {self.watch_values}\n')
 
         self.send_heading()
         self.send_track()

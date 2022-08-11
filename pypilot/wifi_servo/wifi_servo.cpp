@@ -86,8 +86,7 @@ const char *WifiServo::sendCommand(char *command) {
         // send EOL so teh arduino knows command is finished.
         send(this->sock, EOL, strlen(EOL), 0);
         char *result;         
-        int ret;
-        ret = readline(this->sock, &result);
+        readline(this->sock, &result);
         return result;
         
     }
