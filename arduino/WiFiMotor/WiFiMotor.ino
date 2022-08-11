@@ -150,7 +150,7 @@ void process_mode(char buffer[]) {
   strcpy(mode,&buffer[1]);
   Serial.print("Mode is ");
   Serial.println(mode);
-  if (mode_adjust == "") {
+  if (strlen(mode_adjust) == 0) {
     client.println("ok");
   } else {
     client.print("m");
