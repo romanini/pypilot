@@ -23,7 +23,7 @@
 
 #include "wifi_servo.h"
 
-#define PORT 23
+#define PORT 8023
 #define IP "10.10.10.100"
 // #define IP "172.16.0.90"
 #define EOL "\n"

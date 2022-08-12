@@ -30,7 +30,8 @@ IPAddress ip(10, 10, 10, 100);
 
 int status = WL_IDLE_STATUS;
 
-WiFiServer server(23);
+WiFiServer debug_server(23);
+WiFiServer command_server(8023);
 WiFiClient client;
 
 #define BUF_SIZE 100
@@ -44,17 +45,15 @@ WiFiClient client;
 
 char command_buffer[BUF_SIZE];
 int command_count = BUF_SIZE;
-char serial_command_buffer[BUF_SIZE];
-int serial_command_count = BUF_SIZE;
 
 int time_mot=0;
 float heading = 0;
 float track = 0;
-char mode[BUF_SIZE] = "";
+char mode[BUF_SIZE] = { 0 };
 int enabled = 0;
 
 int track_adjust = 0;
-char mode_adjust[BUF_SIZE] = "";
+char mode_adjust[BUF_SIZE] = { 0 };
 int enabled_adjust = -1;
 
 int dir;
@@ -68,9 +67,9 @@ void setup() {
   analogWrite(MOTOR_NEG_PIN,0);
   //Initialize serial and wait for port to open:
   Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
+  // while (!Serial) {
+  //   ; // wait for serial port to connect. Needed for native USB port only
+  // }
 
   // check for the WiFi module:
   if (WiFi.status() == WL_NO_MODULE) {
@@ -97,8 +96,9 @@ void setup() {
     delay(5000);
   }
 
-  // start the server:
-  server.begin();
+  // start the servers:
+  debug_server.begin();
+  command_server.begin();
   // you're connected now, so print out the status:
   printWifiStatus();
 
@@ -142,20 +142,28 @@ void process_track(char buffer[]) {
   } else {
     client.print("t");
     client.println(track_adjust);
+    Serial.print("                Responsding with track adjust [");
+    Serial.print(track_adjust);
+    Serial.println("]");
     track_adjust = 0;
   }
 }
 
 void process_mode(char buffer[]) {
   strcpy(mode,&buffer[1]);
-  Serial.print("Mode is ");
-  Serial.println(mode);
+  mode[strlen(buffer)] = '\0';
+  Serial.print("Mode is [");
+  Serial.print(mode);
+  Serial.println("]");
   if (strlen(mode_adjust) == 0) {
     client.println("ok");
   } else {
     client.print("m");
     client.println(mode_adjust);
-    strcpy(mode_adjust, "");    
+    Serial.print("                      Responsding with mode adjust [");
+    Serial.print(mode_adjust);
+    Serial.println("]");
+    mode_adjust[0] = '\0';   
   }
 }
 
@@ -168,30 +176,94 @@ void process_enabled(char buffer[]) {
   } else {
     client.print("e");
     client.println(enabled_adjust);
+    Serial.print("                       Responsding with enabled adjust [");
+    Serial.print(enabled_adjust);
+    Serial.println("]");
     enabled_adjust = -1;
   }
 }
 
-void process_cmd(char buffer[]) {
+void process_display() {
+  client.print("Heading: ");
+  client.println(heading);
+  client.print("Track: ");
+  client.print(track);
+  client.print(" adjust by ");
+  client.println(track_adjust);
+  client.print("Mode: ");
+  client.println(mode);
+  client.print(" adjust by ");
+  client.println(mode_adjust);
+  client.print("Enabled: ");
+  client.print(enabled);
+  client.print(" adjust by ");
+  client.println(enabled_adjust);
+}
+
+void process_adjust_track(char buffer[]) {
+  track_adjust += atof(&buffer[2]);
+  Serial.print("                          Track adjust is ");
+  Serial.println(track_adjust);
+  client.println("ok");
+}
+
+void process_adjust_mode(char buffer[]) {
+  strcpy(mode_adjust,&buffer[2]);
+  mode_adjust[strlen(buffer) - 1] = '\0';
+  Serial.print("                          Mode adjust is [");
+  Serial.print(mode_adjust);
+  Serial.println("]");
+  client.println("ok");
+}
+
+void process_adjust_enabled(char buffer[]) {
+  enabled_adjust = atoi(&buffer[2]);
+  Serial.print("                          Enabled adjust is ");
+  Serial.println(enabled_adjust);
+  client.println("ok");
+}
+
+void process_help() {
+  client.println("Possible commands:");
+  client.println("");
+  client.println("\tae<0|1> \t\t- Adjust enalbed.  0 = disabled and 1 = enabled.");
+  client.println("\tam<gps|compass> \t- Adjust the mode to the specified mode.");
+  client.println("\tat<track offset> \t- Adjust track to be <track offset> from current heading.");
+  client.println("\td \t\t\t- Display current information such as enabled, track, mode, heading etc.");
+  client.println("\te<0|1> \t\t\t- Set enabled to be the specified value.  0 = disabled and  1 = enabled.");
+  client.println("\th<heding> \t\t- Set the current heading to <heading>");
+  client.println("\tm<gps|comapss> \t\t- Set the current mode to the specified mode.");
+  client.println("\tt<track> \t\t- Set the current to <track>.");
+  client.println("\tw<time in seconds> \t- Start rotatig the wheel for <time in seconds>.");
+  client.println("\t? \t\t\t- Print this help screen");
+}
+
+void process_command(char buffer[]) {
   char command = buffer[0];
   switch (command) {
     case 'a':
-      process_adjust_cmd(buffer);
+      process_adjust_command(buffer);
       break;
-    case 'w':
-      process_wheel(buffer);
+    case 'd':
+      process_display();
+      break;
+    case 'e':
+      process_enabled(buffer);
       break;
     case 'h':
       process_heading(buffer);
       break;
-    case 't':
-      process_track(buffer);
-      break;
     case 'm':
       process_mode(buffer);
       break;
-    case 'e':
-      process_enabled(buffer);
+    case 't':
+      process_track(buffer);
+      break;
+    case 'w':
+      process_wheel(buffer);
+      break;
+    case '?':
+      process_help();
       break;
     default:
       client.println("-1 Command not understood");
@@ -199,25 +271,24 @@ void process_cmd(char buffer[]) {
   }
 }
 
-void process_adjust_cmd(char buffer[]) {
-  char command = buffer[1];
-  switch (command) {
+void process_adjust_command(char buffer[]){
+  char sub_command = buffer[1];
+  switch (sub_command) {
+    case 'e':
+      process_adjust_enabled(buffer);
+      break;   
+    case 'm':
+      process_adjust_mode(buffer);
+      break; 
     case 't':
       process_adjust_track(buffer);
       break;
-    case 'm':
-      process_adjust_mode(buffer);
-      break;
-    case 'e':
-      process_adjust_enabled(buffer);
-      break;
     default:
-      Serial.println("-1 Command not understood");
+      Serial.println("-1 Adjust sub-Command not understood");
       break;
-  }
+  }  
 }
-
-void read_network_command() {
+void read_command() {
   // when the client sends the first byte, say hello:
   if (client) {
     if (!alreadyConnected) {
@@ -232,7 +303,7 @@ void read_network_command() {
       char thisChar = client.read();
       if (thisChar == '\n') {
         command_buffer[BUF_SIZE-command_count]=0;
-        process_cmd(command_buffer);
+        process_command(command_buffer);
         command_count = BUF_SIZE;
       } else {
         if (command_count > 0) {
@@ -244,31 +315,7 @@ void read_network_command() {
   }
 }
 
-void process_adjust_track(char buffer[]) {
-  track_adjust += atof(&buffer[2]);
-  Serial.print("Track adjust is ");
-  Serial.println(track_adjust);
-  client.println("ok");
-}
-
-void process_adjust_mode(char buffer[]) {
-  strcpy(mode_adjust,&buffer[2]);
-  Serial.print("Mode adjust is ");
-  Serial.println(mode_adjust);
-  client.println("ok");
-}
-
-void process_adjust_enabled(char buffer[]) {
-  enabled_adjust = atoi(&buffer[2]);
-  Serial.print("Enabled adjust is ");
-  Serial.println(enabled_adjust);
-  client.println("ok");
-}
-
 void loop() {
-  // wait for a new client:
-  client = server.available();
-
   unsigned int cur_mills = millis();
   if(time_mot < cur_mills && time_mot) {
     time_mot = 0;
@@ -276,8 +323,14 @@ void loop() {
     analogWrite(MOTOR_PLUS_PIN,0);
     analogWrite(MOTOR_NEG_PIN,0);
   }
-  
-  read_network_command();
+
+  // wait for a new client on command server:
+  client = command_server.available();
+  read_command();
+
+  // wait for a new client on debug server:
+  client = debug_server.available();
+  read_command();
 }
 
 void printWifiStatus() {
