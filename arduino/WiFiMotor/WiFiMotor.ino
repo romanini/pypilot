@@ -32,7 +32,7 @@ int status = WL_IDLE_STATUS;
 
 WiFiServer debug_server(23);
 WiFiServer command_server(8023);
-WiFiClient client;
+// WiFiClient client;
 
 #define BUF_SIZE 100
 #define MAX_MOTOR_PLUS 255
@@ -45,6 +45,8 @@ WiFiClient client;
 
 char command_buffer[BUF_SIZE];
 int command_count = BUF_SIZE;
+char debug_buffer[BUF_SIZE];
+int debug_count = BUF_SIZE;
 
 int time_mot=0;
 float heading = 0;
@@ -57,7 +59,8 @@ char mode_adjust[BUF_SIZE] = { 0 };
 int enabled_adjust = -1;
 
 int dir;
-boolean alreadyConnected = false; // whether or not the client was connected previously
+boolean command_client_already_connected = false; // whether or not the client was connected previously
+boolean debug_client_already_connected = false; // whether or not the client was connected previously
 
 void setup() {
 
@@ -66,7 +69,7 @@ void setup() {
   analogWrite(MOTOR_PLUS_PIN,0);
   analogWrite(MOTOR_NEG_PIN,0);
   //Initialize serial and wait for port to open:
-  Serial.begin(9600);
+  Serial.begin(38400);
   // while (!Serial) {
   //   ; // wait for serial port to connect. Needed for native USB port only
   // }
@@ -104,7 +107,7 @@ void setup() {
 
 }
 
-void process_wheel(char buffer[]) {
+void process_wheel(WiFiClient client, char buffer[]) {
   float value = atof(&buffer[1]);
   int run_mills = value * 1000;
   analogWrite(MOTOR_PLUS_PIN,0);
@@ -126,14 +129,14 @@ void process_wheel(char buffer[]) {
   client.println("ok");
 }
 
-void process_heading(char buffer[]) {
+void process_heading(WiFiClient client, char buffer[]) {
   heading = atof(&buffer[1]);
   Serial.print("Heading is ");
   Serial.println(heading);
   client.println("ok");
 }
 
-void process_track(char buffer[]) {
+void process_track(WiFiClient client, char buffer[]) {
   track = atof(&buffer[1]);
   Serial.print("Track is ");
   Serial.println(track);
@@ -149,12 +152,11 @@ void process_track(char buffer[]) {
   }
 }
 
-void process_mode(char buffer[]) {
+void process_mode(WiFiClient client, char buffer[]) {
   strcpy(mode,&buffer[1]);
   mode[strlen(buffer)] = '\0';
-  Serial.print("Mode is [");
-  Serial.print(mode);
-  Serial.println("]");
+  Serial.print("Mode is ");
+  Serial.println(mode);
   if (strlen(mode_adjust) == 0) {
     client.println("ok");
   } else {
@@ -167,7 +169,7 @@ void process_mode(char buffer[]) {
   }
 }
 
-void process_enabled(char buffer[]) {
+void process_enabled(WiFiClient client, char buffer[]) {
   enabled = atoi(&buffer[1]);
   Serial.print("Enabled is ");
   Serial.println(enabled);
@@ -183,7 +185,8 @@ void process_enabled(char buffer[]) {
   }
 }
 
-void process_display() {
+void process_display(WiFiClient client) {
+  Serial.println("Displaying info");
   client.print("Heading: ");
   client.println(heading);
   client.print("Track: ");
@@ -200,14 +203,14 @@ void process_display() {
   client.println(enabled_adjust);
 }
 
-void process_adjust_track(char buffer[]) {
+void process_adjust_track(WiFiClient client, char buffer[]) {
   track_adjust += atof(&buffer[2]);
   Serial.print("                          Track adjust is ");
   Serial.println(track_adjust);
   client.println("ok");
 }
 
-void process_adjust_mode(char buffer[]) {
+void process_adjust_mode(WiFiClient client, char buffer[]) {
   strcpy(mode_adjust,&buffer[2]);
   mode_adjust[strlen(buffer) - 1] = '\0';
   Serial.print("                          Mode adjust is [");
@@ -216,14 +219,14 @@ void process_adjust_mode(char buffer[]) {
   client.println("ok");
 }
 
-void process_adjust_enabled(char buffer[]) {
+void process_adjust_enabled(WiFiClient client, char buffer[]) {
   enabled_adjust = atoi(&buffer[2]);
   Serial.print("                          Enabled adjust is ");
   Serial.println(enabled_adjust);
   client.println("ok");
 }
 
-void process_help() {
+void process_help(WiFiClient client) {
   client.println("Possible commands:");
   client.println("");
   client.println("\tae<0|1> \t\t- Adjust enalbed.  0 = disabled and 1 = enabled.");
@@ -238,32 +241,32 @@ void process_help() {
   client.println("\t? \t\t\t- Print this help screen");
 }
 
-void process_command(char buffer[]) {
+void process_command(WiFiClient client, char buffer[]) {
   char command = buffer[0];
   switch (command) {
     case 'a':
-      process_adjust_command(buffer);
+      process_adjust_command(client, buffer);
       break;
     case 'd':
-      process_display();
+      process_display(client);
       break;
     case 'e':
-      process_enabled(buffer);
+      process_enabled(client, buffer);
       break;
     case 'h':
-      process_heading(buffer);
+      process_heading(client, buffer);
       break;
     case 'm':
-      process_mode(buffer);
+      process_mode(client, buffer);
       break;
     case 't':
-      process_track(buffer);
+      process_track(client, buffer);
       break;
     case 'w':
-      process_wheel(buffer);
+      process_wheel(client, buffer);
       break;
     case '?':
-      process_help();
+      process_help(client);
       break;
     default:
       client.println("-1 Command not understood");
@@ -271,43 +274,36 @@ void process_command(char buffer[]) {
   }
 }
 
-void process_adjust_command(char buffer[]){
+void process_adjust_command(WiFiClient client, char buffer[]){
   char sub_command = buffer[1];
   switch (sub_command) {
     case 'e':
-      process_adjust_enabled(buffer);
+      process_adjust_enabled(client, buffer);
       break;   
     case 'm':
-      process_adjust_mode(buffer);
+      process_adjust_mode(client, buffer);
       break; 
     case 't':
-      process_adjust_track(buffer);
+      process_adjust_track(client, buffer);
       break;
     default:
       Serial.println("-1 Adjust sub-Command not understood");
       break;
   }  
 }
-void read_command() {
+void read_command(WiFiClient client) {
   // when the client sends the first byte, say hello:
   if (client) {
-    if (!alreadyConnected) {
-      // clear out the input buffer:
-      Serial.println("We have a new client");
-      client.flush();
-      alreadyConnected = true;
-    }
-
     if (client.available() > 0) {
       // read the bytes incoming from the client:
       char thisChar = client.read();
       if (thisChar == '\n') {
-        command_buffer[BUF_SIZE-command_count]=0;
-        process_command(command_buffer);
+        command_buffer[BUF_SIZE - command_count]=0;
+        process_command(client, command_buffer);
         command_count = BUF_SIZE;
       } else {
         if (command_count > 0) {
-          command_buffer[BUF_SIZE-command_count]=thisChar;
+          command_buffer[BUF_SIZE - command_count]=thisChar;
           command_count--;
         }
       }
@@ -315,6 +311,25 @@ void read_command() {
   }
 }
 
+void read_debug(WiFiClient client) {
+  // when the client sends the first byte, say hello:
+  if (client) {
+    if (client.available() > 0) {
+      // read the bytes incoming from the client:
+      char thisChar = client.read();
+      if (thisChar == '\n') {
+        debug_buffer[BUF_SIZE - debug_count]=0;
+        process_command(client, debug_buffer);
+        debug_count = BUF_SIZE;
+      } else {
+        if (debug_count > 0) {
+          debug_buffer[BUF_SIZE - debug_count]=thisChar;
+          debug_count--;
+        }
+      }
+    }
+  }
+}
 void loop() {
   unsigned int cur_mills = millis();
   if(time_mot < cur_mills && time_mot) {
@@ -325,12 +340,28 @@ void loop() {
   }
 
   // wait for a new client on command server:
-  client = command_server.available();
-  read_command();
+  WiFiClient command_client = command_server.available();
+  if (command_client) {  
+    if (!command_client_already_connected) {
+      // clear out the input buffer:
+      Serial.println("We have a new command client");
+      command_client.flush();
+      command_client_already_connected = true;
+    }
+    read_command(command_client);
+  } 
 
   // wait for a new client on debug server:
-  client = debug_server.available();
-  read_command();
+  WiFiClient debug_client = debug_server.available();
+  if (debug_client) {
+    if (!debug_client_already_connected) {
+      // clear out the input buffer:
+      Serial.println("We have a new debug client");
+      debug_client.flush();
+      debug_client_already_connected = true;
+    }
+    read_debug(debug_client);
+  }
 }
 
 void printWifiStatus() {
