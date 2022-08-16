@@ -9,6 +9,7 @@
 
 import os
 import sys
+import time 
 from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -47,14 +48,19 @@ class Servo(object):
     def send_mode(self):
         result = self.driver.mode(self.watch_values['ap.mode'])
         print(f'Sent Mode got response [{result}]\n')
+        print(result)
         if result != 'ok':
+            print("Result is not 'ok'")
             if result[0] == 'm':
                 # skip the leading m and the other for the trailing CR/LF
-                mode_adjust = result[1:-2]
+                mode_adjust = result[1:-1]
+                print(f'modeadjust = {mode_adjust}')
                 if mode_adjust == "compass" or mode_adjust == "gps":
                     print(f'Set mode to [{mode_adjust}]\n')
             else:
                 print(f'Error setting mode: {result}')
+        else:
+            print("Result is 'ok'")
 
     def send_enabled(self):
         result = self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)

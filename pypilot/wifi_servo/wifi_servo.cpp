@@ -66,7 +66,9 @@ const char *WifiServo::track(double track) {
 const char *WifiServo::mode(char *mode) {
     char command[100];
     sprintf(command, "m%s",mode);
-    return this->sendCommand(command);
+    const char *ret = this->sendCommand(command);
+    printf("Mode returning %s", ret);
+    return ret;
 }
 
 const char *WifiServo::enabled(int enabled) {
@@ -98,7 +100,7 @@ int WifiServo::readline(int fd, char **out) {
     int in_buf = 0; 
     int ret;
     char ch; 
-    char *buffer = PyMem_Malloc(buf_size); 
+    char *buffer = (char *) PyMem_Malloc(buf_size); 
     char *new_buffer;
 
     do {
