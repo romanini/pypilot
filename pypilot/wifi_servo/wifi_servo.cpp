@@ -94,11 +94,11 @@ const char *WifiServo::sendCommand(char *command) {
 }
 
 int WifiServo::readline(int fd, char **out) {
-    int buf_size = 0; 
+    int buf_size = 100; 
     int in_buf = 0; 
     int ret;
     char ch; 
-    char *buffer = NULL; 
+    char *buffer = PyMem_Malloc(buf_size); 
     char *new_buffer;
 
     do {
@@ -115,7 +115,7 @@ int WifiServo::readline(int fd, char **out) {
             break; // yes
 
         // is more memory needed?
-        if ((buf_size == 0) || (in_buf == buf_size)) {
+        if (in_buf == buf_size) {
             buf_size += 128; 
             new_buffer = (char *) PyMem_Realloc(buffer, buf_size); 
 
@@ -137,7 +137,7 @@ int WifiServo::readline(int fd, char **out) {
         --in_buf;
 
     // is more memory needed?
-    if ((buf_size == 0) || (in_buf == buf_size)) {
+    if (in_buf == buf_size) {
         ++buf_size; 
         new_buffer = (char *) PyMem_Realloc(buffer, buf_size); 
 
