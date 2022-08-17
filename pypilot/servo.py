@@ -145,7 +145,7 @@ class Servo(object):
         return self.client.register(_type(*(['servo.' + name] + list(args)), **kwargs))
 
     def log_command(self, line):
-        self.command_log.write(str(datetime.now()) + ' ' + line)
+        # self.command_log.write(str(datetime.now()) + ' ' + line)
         pass
 
     def send_command(self):
