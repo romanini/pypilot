@@ -251,7 +251,7 @@ class Servo(object):
 
     def send_track(self):
         result = self.driver.track(self.watch_values['ap.heading_command'])
-        self.log_command(f'Sent Track got response [{result}]\n')
+        # self.log_command(f'Sent Track got response [{result}]\n')
         if result != 'ok':
             if result[0] == 't':
                 track_adjust = float(result[1:len(result)])
@@ -262,7 +262,7 @@ class Servo(object):
                 new_track = self.watch_values['ap.heading'] + track_adjust
                 self.local_client.set('ap.mode', 'compass')
                 self.local_client.set('ap.heading_command', new_track)
-                self.log_command(f'Set mode to compass and track to [{new_track}]\n')
+                # self.log_command(f'Set mode to compass and track to [{new_track}]\n')
             else:
                 print(f'Error setting track: {result}')
 
@@ -272,7 +272,7 @@ class Servo(object):
         if result != 'ok':
             if result[0] == 'm':
                 # skip the leading m and the other for the trailing CR/LF
-                mode_adjust = result[1:-2]
+                mode_adjust = result[1:-1]
                 if mode_adjust == "compass" or mode_adjust == "gps":
                     self.local_client.set('ap.mode', mode_adjust)
                     self.log_command(f'Set mode to [{mode_adjust}]\n')
@@ -281,12 +281,12 @@ class Servo(object):
 
     def send_enabled(self):
         result = self.driver.enabled(1 if self.watch_values['ap.enabled'] else 0)
-        self.log_command(f'Sent Enabled got response [{result}]\n')
+        # self.log_command(f'Sent Enabled got response [{result}]\n')
         if result != 'ok':
             if result[0] == 'e':
                 enabled_adjust = int(result[1:len(result)])
                 self.local_client.set('ap.enabled', True if enabled_adjust == 1 else False)
-                self.log_command(f'Set enabled to [{enabled_adjust}]\n')
+                # self.log_command(f'Set enabled to [{enabled_adjust}]\n')
             else:
                 print(f'Error setting enabled: {result}')
 
@@ -297,7 +297,7 @@ class Servo(object):
         msgs = self.local_client.receive()
         for name, value in msgs.items():
             self.watch_values[name] = value
-        self.log_command(f'Watch Values: {self.watch_values}\n')
+        # self.log_command(f'Watch Values: {self.watch_values}\n')
 
         self.send_heading()
         self.send_track()
