@@ -350,6 +350,8 @@ float read_compass() {
   if (heading < 0){
     heading = 360 + heading;
   }
+  Serial.print("Compass Heading: ");
+  Serial.println(heading);
   return heading;  
 }
 
@@ -364,6 +366,14 @@ void check_compass() {
     short_average_heading = short_average_heading + ((heading - short_average_heading) / COMPASS_SHORT_AVERAGE_SIZE);
     long_average_heading_change = long_average_heading_change + (((heading - long_average_heading) - long_average_heading_change) / COMPASS_LONG_AVERAGE_SIZE);
     short_average_heading_change = short_average_heading_change + (((heading - short_average_heading) - short_average_heading_change) / COMPASS_SHORT_AVERAGE_SIZE);
+    Serial.print("Average Heading: ");
+    Serial.print(long_average_heading);
+    Serial.print(" ");
+    Serial.print(short_average_heading);
+    Serial.print(" ");
+    Serial.print(long_average_heading_change);
+    Serial.print(" ");
+    Serial.println(short_average_heading_change);
     if (strcmp(mode,"compass") == 0) {
       float alter = bearing - short_average_heading;
       if (alter > 180) {
@@ -372,6 +382,8 @@ void check_compass() {
         alter = alter + 360;
       }
       heading_adjust = alter;
+      Serial.print("Heading Adjust: ");
+      Serial.println(heading_adjust);
     }
   }
 }
