@@ -255,11 +255,7 @@ class Servo(object):
         if result != 'ok':
             if result[0] == 't':
                 track_adjust = float(result[1:len(result)])
-                # If we want to alter where we are going track no matter means
-                # anything to us.  We need to change mode to compass and point to
-                # where we are pointing.
-                # Note: I'm adjusting based on heading and not track is that accurate?
-                new_track = self.watch_values['ap.heading'] + track_adjust
+                new_track = self.watch_values['ap.heading_command'] + track_adjust
                 self.local_client.set('ap.mode', 'compass')
                 self.local_client.set('ap.heading_command', new_track)
                 # self.log_command(f'Set mode to compass and track to [{new_track}]\n')
